@@ -23,13 +23,13 @@ graph TB
     
     Reporter --> PR([GitHub Pull Request])
     
-    style Start fill:#e1f5ff
-    style PR fill:#e1f5ff
-    style Planner fill:#fff4e1
-    style Researcher fill:#f0e1ff
-    style Resolver fill:#e1ffe1
-    style Critic fill:#ffe1e1
-    style Reporter fill:#ffe1f5
+    style Start fill:#2196F3,stroke:#0D47A1,stroke-width:4px,color:#fff
+    style PR fill:#2196F3,stroke:#0D47A1,stroke-width:4px,color:#fff
+    style Planner fill:#FF9800,stroke:#E65100,stroke-width:4px,color:#fff
+    style Researcher fill:#9C27B0,stroke:#4A148C,stroke-width:4px,color:#fff
+    style Resolver fill:#4CAF50,stroke:#1B5E20,stroke-width:4px,color:#fff
+    style Critic fill:#F44336,stroke:#B71C1C,stroke-width:4px,color:#fff
+    style Reporter fill:#E91E63,stroke:#880E4F,stroke-width:4px,color:#fff
 ```
 
 
