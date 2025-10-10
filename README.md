@@ -7,6 +7,7 @@ tools로 사용 예정
 ## Architecture
 
 ### 전체 시스템 구조도
+```mermaid
 graph TB
     Start([GitHub Issue]) --> Ingest[Issue Ingestion]
     Ingest --> Planner[🎯 Planner Agent<br/>이슈 분석 및 전략 수립]
@@ -29,8 +30,11 @@ graph TB
     style Resolver fill:#e1ffe1
     style Critic fill:#ffe1e1
     style Reporter fill:#ffe1f5
+```
+
 
 ### RAG 시스템 통합 (모든 에이전트 공통 도구)
+```mermaid
 graph LR
     subgraph Agents[" 🤖 모든 에이전트 "]
         A1[Planner]
@@ -65,8 +69,10 @@ graph LR
     
     style RAG fill:#e8f4f8
     style External fill:#f8e8e8
+```
 
 ### 피드백 루프 상세
+```mermaid
 stateDiagram-v2
     [*] --> Planner: 이슈 접수
     
@@ -96,6 +102,7 @@ stateDiagram-v2
         최대 5회 반복
         (무한 루프 방지)
     end note
+```
 
 
 ### 에이전트 역할
