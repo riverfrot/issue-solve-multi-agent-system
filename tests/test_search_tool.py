@@ -131,3 +131,13 @@ def get_github_issue_detail(repo_url: str, issue_number: int) -> str:
 
 # 모든 도구 목록
 ALL_TOOLS = [search_github_issue, get_github_issue_detail]
+
+
+# 테스트 코드
+if __name__ == "__main__":
+    # 도구 직접 테스트
+    print("=== GitHub 이슈 검색 테스트 ===\n")
+    result = search_github_issue.invoke(
+        {"repo_url": "https://github.com/riverfrot/sample-spring"}
+    )
+    print(result)
