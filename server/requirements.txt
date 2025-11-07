@@ -1,0 +1,10 @@
+# Multi-Agent Chatbot Dependencies - Tested and Working
+fastapi>=0.121.0
+uvicorn[standard]>=0.38.0
+pydantic>=2.12.0
+pydantic-settings>=2.10.0
+openai>=2.7.0
+aiohttp>=3.9.0
+python-multipart>=0.0.20
+python-dotenv>=1.2.0
+anyio>=4.11.0
