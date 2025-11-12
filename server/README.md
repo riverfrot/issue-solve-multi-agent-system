@@ -1,8 +1,8 @@
-# issue-solve-multi-agent-system
-OSS 이슈 해결을 위한 멀티 에이전트 시스템
-해당 멀티 에이전트 repository는 아래의 시스템 구조도를 통해 이슈를 수집 및 해결 진행 예정입니다.
-추후 https://github.com/riverfrot/advanced-rag-system repository를 MCP HTTP Streamable 서버로 구동 후 
-tools로 사용 예정
+# GitHub Issue Analysis System
+GitHub 이슈 분석 자동화 시스템
+
+협업 워크플로우를 통해 GitHub 저장소의 이슈를 체계적으로 분석하고 해결방안을 제시하는 시스템입니다.
+Supervisor 패턴을 기반으로 여러 전문 컴포넌트가 협력하여 포괄적인 이슈 분석을 수행합니다.
 
 ## Architecture
 
@@ -135,7 +135,7 @@ stateDiagram-v2
 - [ ] 웹 대시보드 개발
 - [ ] 고급 모니터링 및 로깅
 - [ ] 다중 Repository 동시 처리
-- [ ] AI 모델 성능 최적화
+- [ ] 분석 엔진 성능 최적화
 
 ## 라이선스
 

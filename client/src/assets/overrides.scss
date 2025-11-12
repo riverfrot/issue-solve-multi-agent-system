@@ -1,0 +1,61 @@
+// Variables are now globally imported via vite.config.js
+// Bootstrap overrides
+.btn {
+  border-radius: $border-radius;
+  font-weight: 500;
+  transition: $transition-base;
+}
+
+.card {
+  border: none;
+  box-shadow: $box-shadow-sm;
+  border-radius: $border-radius;
+}
+
+.form-control {
+  border-radius: $border-radius;
+  border: 1px solid #ced4da;
+  
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+}
+
+.navbar {
+  box-shadow: $box-shadow-sm;
+}
+
+// Custom component overrides
+.toast {
+  border-radius: $border-radius;
+}
+
+.modal-content {
+  border-radius: $border-radius-lg;
+}
+
+// Animation utilities
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(10px);
+  opacity: 0;
+}
