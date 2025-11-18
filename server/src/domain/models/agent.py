@@ -14,14 +14,16 @@ class AgentType(str, Enum):
         return {
             self.SUPERVISOR: "🎯",
             self.RAG: "📚",
+            self.CODE: "💻",
             self.SEARCH: "🔍",
             self.GENERAL: "💬"
-
+        }.get(self, "❓")
     
-    def get_description(serf)-> str:
+    def get_description(self) -> str:
         descriptions = {
             self.SUPERVISOR: "사용자 의도 분석 및 적절한 에이전트 선택",
             self.RAG: "내부 기본 문서탐색",
+            self.CODE: "코드 생성 및 실행",
             self.SEARCH: "외부 인터넷 검색",
             self.GENERAL: "일반 대화 및 질의응답"
         }
@@ -49,4 +51,4 @@ class AgentResponse(BaseModel):
     """에이전트 응답시 사용되는 모델"""
     content: str
     agent_type: AgentType
-    metadata: Dict = {}s
+    metadata: Dict = {}
