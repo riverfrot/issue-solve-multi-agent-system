@@ -4,7 +4,7 @@ Tavily Search API Client
 from typing import List, Dict, Optional
 import aiohttp
 import os
-from app.utils.logger import logger
+from utils.logger import logger
 
 
 class TavilyClient:

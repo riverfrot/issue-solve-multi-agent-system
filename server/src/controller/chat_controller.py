@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
 
-from app.domain.models.chat import ChatRequest, ChatResponse, ChatMessage
-from app.service.chat_service import ChatService
-from app.config.dependencies import get_chat_service
-from app.utils.logger import logger
+from domain.models.chat import ChatRequest, ChatResponse, ChatMessage
+from service.chat_service import ChatService
+from config.dependencies import get_chat_service
+from utils.logger import logger
 
 
 router = APIRouter(prefix="/api/chat", tags=["Multi-Agent Chat"])
@@ -131,7 +131,7 @@ async def test_workflow(
         test_request = ChatRequest(
             message=test_query, session_id="workflow_test_session"
         )
-        
+
         # 워크플로우 실행
         response = await chat_service.chat(test_request)
 

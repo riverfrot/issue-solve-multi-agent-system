@@ -1,6 +1,6 @@
-from app.domain.models.agent import AgentRequest, AgentResponse, AgentType
-from app.infrastructure.llm.openai_client import OpenAIClient
-from app.utils.logger import logger
+from domain.models.agent import AgentRequest, AgentResponse, AgentType
+from infrastructure.llm.openai_client import OpenAIClient
+from utils.logger import logger
 
 
 class GeneralAgent:
@@ -22,13 +22,13 @@ class GeneralAgent:
             is_error_fallback = request.context and request.context.get("error", False)
 
             if is_error_fallback:
-                response_content = await self._handle_error_fallback(request.query)
+                response_content = self._handle_error_fallback(request.query)
             else:
-                respone_content = response_content = await self._handle_general_conversation(request) 
+                response_content = self._handle_general_conversation(request) 
             
             return AgentResponse(
                 content=response_content,
-                agent_type=AgentType.GENERAL.value,
+                agent_type=AgentType.GENERAL,
                 metadata={
                     "conversation_type": "error_fallback" if is_error_fallback else "general",
                     "query_length": len(request.query)
@@ -37,13 +37,13 @@ class GeneralAgent:
         
         except Exception as e:
             logger.error(f"General Agent error: {e}")
-            return AgentResponnse(
-                content="응답을 생성하는중 오류가 발생했습니다.,
-                agent_type=AgentType.GENERAL.value,
+            return AgentResponse(
+                content="응답을 생성하는중 오류가 발생했습니다.",
+                agent_type=AgentType.GENERAL,
                 metadata={"error": str(e)}
             )
 
-    async def _handle_general_conversation(self, request: AgentRequest) -> str:
+    def _handle_general_conversation(self, request: AgentRequest) -> str:
         """
         일반 대화 처리
         """
@@ -51,10 +51,10 @@ class GeneralAgent:
         query_lower = request.query.lower()
         
         if any(keyword in query_lower for keyword in ["도움", "help", "사용법", "기능"]):
-            return await self._get_help_message()
+            return self._get_help_message()
         
         if any(keyword in query_lower for keyword in ["안녕", "hello", "hi", "처음"]):
-            return await self._get_greeting_message()
+            return self._get_greeting_message()
         
         # 일반 대화
         system_prompt = """당신은 도움이 되고 친근한 AI 어시스턴트입니다.
@@ -71,13 +71,13 @@ class GeneralAgent:
 - 필요시 다른 에이전트 기능 안내
 - 한국어로 응답"""
         
-        return await self.llm_client.generate(
+        return self.llm_client.generate(
             prompt=request.query,
             system_prompt=system_prompt,
             temperature=0.7
         )
     
-    async def _handle_error_fallback(self, query: str) -> str:
+    def _handle_error_fallback(self, query: str) -> str:
         """
         에러 폴백 처리
         """
@@ -96,7 +96,7 @@ class GeneralAgent:
 
 궁금한 점이 있으시면 언제든 질문해주세요!"""
     
-    async def _get_help_message(self) -> str:
+    def _get_help_message(self) -> str:
         """
         도움말 메시지
         """
@@ -127,7 +127,7 @@ class GeneralAgent:
 
 **팁**: 자연스럽게 질문하시면 Supervisor가 자동으로 적절한 에이전트를 선택합니다!"""
     
-    async def _get_greeting_message(self) -> str:
+    def _get_greeting_message(self) -> str:
         """
         인사 메시지
         """

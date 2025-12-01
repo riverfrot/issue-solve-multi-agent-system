@@ -1,3 +1,9 @@
+from typing import Dict, List
+from domain.models.agent import AgentRequest, AgentResponse, AgentType
+from infrastructure.llm.openai_client import OpenAIClient
+from utils.logger import logger
+
+
 class RAGAgent:
     """
     RAG agent (Retrieval Augmented Generation)
@@ -19,7 +25,7 @@ class RAGAgent:
 
         documents = self._get_mock_documents(request.query)
         
-        context = self._build_conntext(documents)
+        context = self._build_context(documents)
 
         system_prompt = f"""당신은 내부 문서 검색 전문가입니다.
 
@@ -34,15 +40,15 @@ class RAGAgent:
 
 
         try:
-            response_content = await self.llm_clinet.generate(
+            response_content = self.llm_client.generate(
                 prompt=request.query,
                 system_prompt=system_prompt,
-                temperature=0.0 # 
+                temperature=0.0
             )
 
-        return AgentResponse(
+            return AgentResponse(
                 content=response_content,
-                agent_type=AgentType.RAG.value,
+                agent_type=AgentType.RAG,
                 metadata={
                     "documents_found": len(documents),
                     "search_query": request.query,
@@ -54,7 +60,7 @@ class RAGAgent:
             logger.error(f"RAG Agent error: {e}")
             return AgentResponse(
                 content=f"죄송합니다. 문서 검색 중 오류가 발생했습니다: {str(e)}",
-                agent_type=AgentType.RAG.value,
+                agent_type=AgentType.RAG,
                 metadata={"error": str(e)}
             )
 

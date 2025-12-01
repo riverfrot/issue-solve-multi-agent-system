@@ -1,3 +1,9 @@
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict
+from datetime import datetime
+import uuid
+
+
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     session_id: str
@@ -29,7 +35,8 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    message: ChatMessage
+    message: str
+    session_id: str
     agent_used: str
     thinking_process: List[str] = Field(default_factory=list)
     metadata: Dict = Field(default_factory=dict)

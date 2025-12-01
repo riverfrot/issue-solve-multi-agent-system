@@ -4,7 +4,7 @@ OpenAI API Client
 from openai import AsyncOpenAI
 from typing import Optional, AsyncIterator
 import os
-from app.utils.logger import logger
+from utils.logger import logger
 
 
 class OpenAIClient:
