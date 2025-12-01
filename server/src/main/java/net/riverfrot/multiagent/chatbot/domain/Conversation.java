@@ -26,7 +26,6 @@ public class Conversation {
         this.messages = new ArrayList<>();
         this.userId = null;
         this.startedAt = LocalDateTime.now();
-        this.lastActivity = LocalDateTime.now();
     }
 
     private Conversation(Builder builder) {
@@ -34,7 +33,6 @@ public class Conversation {
         this.messages = new ArrayList<>(); // 빈 리스트로 시작
         this.userId = builder.userId;
         this.startedAt = builder.startedAt != null ? builder.startedAt : LocalDateTime.now();
-        this.lastActivity = this.startedAt;
     }
 
     public String getSessionId() {
@@ -63,7 +61,6 @@ public class Conversation {
         }
 
         messages.add(message);
-        this.lastActivity = LocalDateTime.now();
         
         if (messages.size() > MAX_MESSAGES_DEFAULT) {
             messages.remove(0); 
@@ -103,7 +100,7 @@ public class Conversation {
     @Override
     public String toString() {
         return String.format("Conversation{sessionId='%s', messageCount=%d, startedAt=%s, isActive=%s}", 
-                           sessionId, messages.size(), startedAt, isActive());
+                           sessionId, messages.size(), startedAt);
     }
 
     public static class Builder {
