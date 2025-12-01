@@ -77,18 +77,6 @@ npm run lint
 \`config/dev.env.js\` 파일에서 개발 환경 설정:
 - `API_URL`: 백엔드 API 서버 주소 (기본값: http://localhost:8000)
 
-## 기존 AI 스타일과의 차이점
-
-| 구분 | 기존 (AI 스타일) | 현재 (Human 스타일) |
-|------|----------------|-------------------|
-| Vue API | Composition API | Options API |
-| 스타일링 | TailwindCSS | Bootstrap + SCSS |
-| 컴포넌트 구조 | 대형 단일 컴포넌트 | 모듈화된 작은 컴포넌트 |
-| 상태 관리 | ref/reactive | Vuex Store |
-| 라우팅 | 없음 | Vue Router |
-| 에러 처리 | 기본적 | 체계적 인터셉터 |
-| 국제화 | 없음 | Vue i18n 지원 |
-
 ## 개발자 도구
 
 - **ESLint**: Airbnb 스타일 가이드 기반
