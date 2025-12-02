@@ -1,5 +1,6 @@
 package net.riverfrot.multiagent.chatbot.domain;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -11,13 +12,28 @@ import java.util.UUID;
 /**
  * 챗봇 대화 세션을 관리하는 도메인 엔티티입니다.
  */
+@Entity
+@Table(name = "conversations", indexes = {
+    @Index(name = "idx_conversation_user_started", columnList = "userId, startedAt"),
+    @Index(name = "idx_conversation_started_at", columnList = "startedAt")
+})
 public class Conversation {
 
     private static final int MAX_MESSAGES_DEFAULT = 100;
 
+    @Id
+    @Column(name = "session_id", length = 36)
     private final String sessionId;
+    
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JoinColumn(name = "session_id")
+    @OrderBy("timestamp ASC")
     private final List<ChatMessage> messages;
+    
+    @Column(name = "user_id", nullable = false, length = 100)
     private final String userId;
+    
+    @Column(name = "started_at", nullable = false)
     private final LocalDateTime startedAt;
 
     // 기본 생성자 (JPA 호환)
