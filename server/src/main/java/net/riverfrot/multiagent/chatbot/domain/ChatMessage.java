@@ -1,19 +1,44 @@
 package net.riverfrot.multiagent.chatbot.domain;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+@Entity
+@Table(name = "chat_messages", indexes = {
+    @Index(name = "idx_chat_message_session_timestamp", columnList = "sessionId, timestamp"),
+    @Index(name = "idx_chat_message_agent_type", columnList = "agentType")
+})
 public class ChatMessage {
 
+    @Id
+    @Column(length = 36)
     private final String id;
+    
+    @Column(name = "session_id", nullable = false, length = 36)
     private final String sessionId;
+    
+    @Column(nullable = false, length = 20)
     private final String role;
+    
+    @Column(nullable = false, columnDefinition = "TEXT")
     private final String content;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "agent_type", length = 20)
     private final AgentType agentType;
+    
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "chat_message_metadata", 
+                    joinColumns = @JoinColumn(name = "message_id"))
+    @MapKeyColumn(name = "metadata_key", length = 100)
+    @Column(name = "metadata_value", columnDefinition = "TEXT")
     private final Map<String, Object> metadata;
+    
+    @Column(nullable = false)
     private final LocalDateTime timestamp;
 
     protected ChatMessage() {

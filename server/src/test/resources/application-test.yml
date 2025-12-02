@@ -1,0 +1,25 @@
+# 테스트 환경 설정
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+    
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        
+  sql:
+    init:
+      mode: never  # 테스트에서는 data.sql 로드하지 않음
+      
+logging:
+  level:
+    net.riverfrot.multiagent: WARN
+    org.hibernate.SQL: WARN
+    root: WARN

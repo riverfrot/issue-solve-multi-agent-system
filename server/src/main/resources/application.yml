@@ -1,0 +1,82 @@
+# Spring Boot Application Configuration
+# H2 Database 기반으로 개발 환경 설정, 추후 RDBMS 마이그레이션 고려
+
+spring:
+  application:
+    name: chatbot-multiagent-system
+    
+  # H2 Database 설정
+  datasource:
+    url: jdbc:h2:mem:chatbot;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: 
+    
+  # H2 Console 설정 (개발용)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+        
+  # JPA 설정
+  jpa:
+    database: h2
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop  # 개발환경용, 프로덕션에서는 validate로 변경
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        highlight_sql: true
+    defer-datasource-initialization: true
+    
+  # SQL 초기화 설정
+  sql:
+    init:
+      mode: embedded
+      
+# 로깅 설정
+logging:
+  level:
+    net.riverfrot.multiagent: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.transaction: DEBUG
+    
+# 서버 설정
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+    
+# 프로파일별 설정 분리를 위한 기본 설정
+---
+# 개발 프로파일
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      
+---
+# 프로덕션 프로파일 (RDBMS 마이그레이션 대비)
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  datasource:
+    # 프로덕션 RDBMS 설정은 환경변수나 외부 설정으로 관리
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/chatbot}
+    username: ${DB_USERNAME:chatbot}
+    password: ${DB_PASSWORD:}
+    driverClassName: ${DB_DRIVER:org.postgresql.Driver}
