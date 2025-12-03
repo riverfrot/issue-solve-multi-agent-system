@@ -45,7 +45,7 @@ class ChatbotServiceTest {
         assertNotNull(response.message());
         assertEquals("general", response.agentType());
         
-        String messages = chatMessageRepository.findBySessionIdOrderByTimestamp(sessionId);
+        var messages = chatMessageRepository.findBySessionIdOrderByTimestamp(sessionId);
         assertEquals(2, messages.size());
         
         assertTrue(conversationRepository.findBySessionId(sessionId).isPresent());
@@ -66,7 +66,7 @@ class ChatbotServiceTest {
         chatbotService.processChat(secondRequest);
         
         // Then
-        String messages = chatMessageRepository.findBySessionIdOrderByTimestamp(sessionId);
+        var messages = chatMessageRepository.findBySessionIdOrderByTimestamp(sessionId);
         assertEquals(4, messages.size());
         
         long conversationCount = conversationRepository.count();
