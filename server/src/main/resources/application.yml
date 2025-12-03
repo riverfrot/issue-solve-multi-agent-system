@@ -49,7 +49,7 @@ logging:
     
 # 서버 설정
 server:
-  port: 8080
+  port: 8000  # Vue.js가 8080 사용중이므로 8081로 변경
   servlet:
     context-path: /api
     
