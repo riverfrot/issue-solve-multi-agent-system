@@ -4,6 +4,9 @@ import net.riverfrot.multiagent.chatbot.domain.ChatMessageRepository;
 import net.riverfrot.multiagent.chatbot.domain.ConversationRepository;
 import net.riverfrot.multiagent.chatbot.dto.ChatRequest;
 import net.riverfrot.multiagent.chatbot.dto.ChatResponse;
+import net.riverfrot.multiagent.user.application.UserService;
+import net.riverfrot.multiagent.user.domain.User;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,11 @@ class ChatbotServiceTest {
     
     @Autowired
     private ConversationRepository conversationRepository;
+    
+    @Autowired
+    private UserService userService;
+    
+    private User testUser;
     
     @Test
     @DisplayName("채팅 처리 - DB에 메시지 저장 확인")
