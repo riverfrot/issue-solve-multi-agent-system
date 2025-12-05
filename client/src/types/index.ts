@@ -1,5 +1,5 @@
 export interface Message {
-  id: number;
+  id: number | string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
@@ -8,6 +8,7 @@ export interface Message {
   thinking_process?: any;
   error?: boolean;
   welcome?: boolean;
+  streaming?: boolean;
 }
 
 export interface MessageMetadata {

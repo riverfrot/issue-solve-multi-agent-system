@@ -93,6 +93,8 @@ export default {
     return {
       isUserScrolled: false,
       showMetadata: false,
+      streamingMessageId: null,
+      streamingContent: '',
       quickActions: [
         {
           emoji: '📚',
@@ -144,18 +146,75 @@ export default {
 
       this.isUserScrolled = false;
 
+      // Create streaming message placeholder
+      const streamingMessage = {
+        id: 'streaming_' + Date.now(),
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+        agent_type: 'supervisor',
+        streaming: true
+      };
+
+      this.$store.commit('addMessage', streamingMessage);
+      this.streamingMessageId = streamingMessage.id;
+      this.streamingContent = '';
+
       try {
-        const response = await apiService.sendMessage(message, this.currentSessionId);
-        this.addAssistantMessage(response);
+        await apiService.sendStreamingMessage(
+          message,
+          this.currentSessionId,
+          (chunk) => {
+            // Update streaming content
+            this.streamingContent += chunk;
+            
+            // Update the streaming message in store
+            this.$store.commit('updateStreamingMessage', {
+              id: this.streamingMessageId,
+              content: this.streamingContent
+            });
+            
+            this.$store.commit('updateAgentStatus', '🎯 AI가 응답하고 있습니다...');
+          },
+          () => {
+            // Streaming completed
+            this.$store.commit('updateStreamingMessage', {
+              id: this.streamingMessageId,
+              streaming: false
+            });
+            this.$store.commit('updateCurrentAgent', 'general');
+            this.$store.commit('updateAgentStatus', '✅ 응답 완료');
+            this.$store.commit('updateIsLoading', false);
+            
+            this.streamingMessageId = null;
+            this.streamingContent = '';
+          },
+          (error) => {
+            console.error('Streaming failed:', error);
+            
+            // Update streaming message with error
+            this.$store.commit('updateStreamingMessage', {
+              id: this.streamingMessageId,
+              content: 'Sorry, an error occurred. Please try again.',
+              error: true
+            });
+            
+            this.$store.commit('updateAgentStatus', '❌ 오류 발생 - 다시 시도해주세요');
+            this.$store.commit('updateIsLoading', false);
+            
+            this.streamingMessageId = null;
+            this.streamingContent = '';
+          }
+        );
         
-        this.$store.commit('updateCurrentAgent', response.agent_used);
-        this.$store.commit('updateAgentStatus', this.getAgentStatusText(response.agent_used));
       } catch (error) {
         console.error('Message send failed:', error);
         this.addErrorMessage(error);
-        this.$store.commit('updateAgentStatus', '오류 발생 - 다시 시도해주세요');
-      } finally {
+        this.$store.commit('updateAgentStatus', '❌ 오류 발생 - 다시 시도해주세요');
         this.$store.commit('updateIsLoading', false);
+        
+        this.streamingMessageId = null;
+        this.streamingContent = '';
       }
     },
     sendQuickAction(action) {
