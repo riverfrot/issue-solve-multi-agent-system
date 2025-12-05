@@ -39,6 +39,20 @@ const store: StoreOptions<AppState> = {
     updateAgentStatus(state: AppState, status: string) {
       state.agentStatus = status;
     },
+    updateStreamingMessage(state: AppState, payload: { id: number | string; content?: string; streaming?: boolean; error?: boolean }) {
+      const messageIndex = state.messages.findIndex(msg => msg.id === payload.id);
+      if (messageIndex !== -1) {
+        if (payload.content !== undefined) {
+          state.messages[messageIndex].content = payload.content;
+        }
+        if (payload.streaming !== undefined) {
+          state.messages[messageIndex].streaming = payload.streaming;
+        }
+        if (payload.error !== undefined) {
+          state.messages[messageIndex].error = payload.error;
+        }
+      }
+    },
   },
   getters: {
     messages: (state: AppState) => state.messages,
