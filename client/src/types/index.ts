@@ -43,6 +43,12 @@ export interface ConnectionStatus {
   status: 'connected' | 'connecting' | 'disconnected';
 }
 
+export interface User {
+  id: string;
+  nickname: string;
+  createdAt: Date;
+}
+
 export interface AppState {
   messages: Message[];
   isLoading: boolean;
@@ -50,6 +56,7 @@ export interface AppState {
   currentAgent: string;
   sessionId: string | null;
   agentStatus: string;
+  user: User | null;
 }
 
 export interface NavigationItem {

@@ -1,32 +1,33 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ApiResponse } from '@/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 interface HealthCheckResponse {
   status: string;
   timestamp: string;
 }
 
-interface ChatHistoryResponse {
-  messages: any[];
-  session_id: string;
-}
+// TODO: 서버에 구현되면 활성화할 인터페이스들
+// interface ChatHistoryResponse {
+//   messages: any[];
+//   session_id: string;
+// }
 
-interface SessionResponse {
-  message: string;
-  session_id: string;
-}
+// interface SessionResponse {
+//   message: string;
+//   session_id: string;
+// }
 
-interface ActiveSessionsResponse {
-  sessions: string[];
-}
+// interface ActiveSessionsResponse {
+//   sessions: string[];
+// }
 
-interface ServiceInfoResponse {
-  name: string;
-  version: string;
-  agents: string[];
-}
+// interface ServiceInfoResponse {
+//   name: string;
+//   version: string;
+//   agents: string[];
+// }
 
 class ApiService {
   private client: AxiosInstance;
@@ -80,12 +81,13 @@ class ApiService {
     }
   }
 
-  // Multi-agent chat message (LangGraph based)
-  async sendMessage(message: string, sessionId: string): Promise<ApiResponse> {
+  // Multi-agent chat message (Spring Boot based)
+  async sendMessage(message: string, sessionId: string, userId: string): Promise<ApiResponse> {
     try {
-      const response = await this.client.post<ApiResponse>('/chat/', {
+      const response = await this.client.post<ApiResponse>('/chatbot/chat', {
         message,
-        session_id: sessionId,
+        sessionId,
+        userId,
       });
       return response.data;
     } catch (error: any) {
@@ -93,78 +95,69 @@ class ApiService {
     }
   }
 
-  // Get chat history
-  async getChatHistory(sessionId: string): Promise<ChatHistoryResponse> {
-    try {
-      const response = await this.client.get<ChatHistoryResponse>(`/api/chat/history/${sessionId}`);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(`Failed to get chat history: ${error.message}`);
-    }
-  }
+  // TODO: 서버에 구현되면 활성화할 엔드포인트들
+  
+  // Get chat history - 서버에 구현 필요
+  // async getChatHistory(sessionId: string): Promise<ChatHistoryResponse> {
+  //   try {
+  //     const response = await this.client.get<ChatHistoryResponse>(`/chatbot/history/${sessionId}`);
+  //     return response.data;
+  //   } catch (error: any) {
+  //     throw new Error(`Failed to get chat history: ${error.message}`);
+  //   }
+  // }
 
-  // Clear session
-  async clearSession(sessionId: string): Promise<SessionResponse> {
-    try {
-      const response = await this.client.delete(`/api/chat/session/${sessionId}`);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(`Failed to clear session: ${error.message}`);
-    }
-  }
+  // Clear session - 서버에 구현 필요
+  // async clearSession(sessionId: string): Promise<SessionResponse> {
+  //   try {
+  //     const response = await this.client.delete(`/chatbot/session/${sessionId}`);
+  //     return response.data;
+  //   } catch (error: any) {
+  //     throw new Error(`Failed to clear session: ${error.message}`);
+  //   }
+  // }
 
-  // Get active sessions
-  async getActiveSessions(): Promise<ActiveSessionsResponse> {
-    try {
-      const response = await this.client.get<ActiveSessionsResponse>('/api/chat/sessions');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(`Failed to get active sessions: ${error.message}`);
-    }
-  }
+  // Get active sessions - 서버에 구현 필요
+  // async getActiveSessions(): Promise<ActiveSessionsResponse> {
+  //   try {
+  //     const response = await this.client.get<ActiveSessionsResponse>('/chatbot/sessions');
+  //     return response.data;
+  //   } catch (error: any) {
+  //     throw new Error(`Failed to get active sessions: ${error.message}`);
+  //   }
+  // }
 
-  // Get service information
-  async getServiceInfo(): Promise<ServiceInfoResponse> {
-    try {
-      const response = await this.client.get<ServiceInfoResponse>('/api/chat/info');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(`Failed to get service info: ${error.message}`);
-    }
-  }
+  // Get service information - 서버에 구현 필요
+  // async getServiceInfo(): Promise<ServiceInfoResponse> {
+  //   try {
+  //     const response = await this.client.get<ServiceInfoResponse>('/chatbot/info');
+  //     return response.data;
+  //   } catch (error: any) {
+  //     throw new Error(`Failed to get service info: ${error.message}`);
+  //   }
+  // }
 
-  // Chat service health check
-  async chatHealthCheck(): Promise<HealthCheckResponse> {
-    try {
-      const response = await this.client.get<HealthCheckResponse>('/api/chat/health');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(`Chat health check failed: ${error.message}`);
-    }
-  }
-
-  // Test workflow
-  async testWorkflow(testQuery: string = '안녕하세요'): Promise<ApiResponse> {
-    try {
-      const response = await this.client.post<ApiResponse>('/api/chat/workflow/test', null, {
-        params: { test_query: testQuery },
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(`Failed to test workflow: ${error.message}`);
-    }
-  }
+  // Chat service health check - 기존 healthCheck() 사용
+  // async chatHealthCheck(): Promise<HealthCheckResponse> {
+  //   try {
+  //     const response = await this.client.get<HealthCheckResponse>('/chatbot/health');
+  //     return response.data;
+  //   } catch (error: any) {
+  //     throw new Error(`Chat health check failed: ${error.message}`);
+  //   }
+  // }
 
   // Streaming chat message using Server-Sent Events
   async sendStreamingMessage(
     message: string, 
     sessionId: string,
+    userId: string,
     onChunk: (chunk: string) => void,
     onComplete: () => void,
     onError: (error: Error) => void
   ): Promise<void> {
     try {
-      const url = `${this.client.defaults.baseURL}/chatbot/chat/stream?message=${encodeURIComponent(message)}&sessionId=${encodeURIComponent(sessionId)}`;
+      const url = `${this.client.defaults.baseURL}/chatbot/chat/stream?message=${encodeURIComponent(message)}&sessionId=${encodeURIComponent(sessionId)}&userId=${encodeURIComponent(userId)}`;
       
       const eventSource = new EventSource(url);
       

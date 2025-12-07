@@ -4,7 +4,7 @@
 
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
-import { AppState, Message, ApiResponse } from './types';
+import { AppState, Message, ApiResponse, User } from './types';
 
 Vue.use(Vuex);
 
@@ -16,6 +16,7 @@ const store: StoreOptions<AppState> = {
     currentAgent: 'supervisor',
     sessionId: null,
     agentStatus: '4개 전문 에이전트 대기 중',
+    user: null,
   },
   mutations: {
     updateMessages(state: AppState, messages: Message[]) {
@@ -53,6 +54,12 @@ const store: StoreOptions<AppState> = {
         }
       }
     },
+    updateUser(state: AppState, user: User) {
+      state.user = user;
+    },
+    clearUser(state: AppState) {
+      state.user = null;
+    },
   },
   getters: {
     messages: (state: AppState) => state.messages,
@@ -61,6 +68,8 @@ const store: StoreOptions<AppState> = {
     currentAgent: (state: AppState) => state.currentAgent,
     sessionId: (state: AppState) => state.sessionId,
     agentStatus: (state: AppState) => state.agentStatus,
+    user: (state: AppState) => state.user,
+    isUserLoggedIn: (state: AppState) => state.user !== null,
   },
   actions: {
     addUserMessage({ commit }, message: string): Message {

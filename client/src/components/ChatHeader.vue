@@ -11,6 +11,14 @@
     </b-navbar-brand>
     
     <b-navbar-nav class="ml-auto">
+      <!-- User Info -->
+      <b-nav-item v-if="user" class="d-flex align-items-center mr-3">
+        <span class="text-light">
+          👤 {{ user.nickname }}
+        </span>
+      </b-nav-item>
+      
+      <!-- Connection Status -->
       <b-nav-item class="d-flex align-items-center">
         <div 
           class="status-indicator mr-2"
@@ -28,6 +36,7 @@
 
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator';
+import { User } from '@/types';
 
 @Component
 export default class ChatHeader extends Vue {
@@ -36,6 +45,9 @@ export default class ChatHeader extends Vue {
 
   @Prop({ type: String, default: '4개 전문 에이전트 대기 중' })
   agentStatus!: string;
+
+  @Prop({ type: Object, default: null })
+  user!: User | null;
 }
 </script>
 

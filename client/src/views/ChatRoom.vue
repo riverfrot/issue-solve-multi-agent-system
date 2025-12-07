@@ -70,18 +70,26 @@
         </div>
       </b-col>
     </b-row>
+
+    <!-- User Nickname Modal -->
+    <user-nickname-modal 
+      ref="nicknameModal"
+      @nickname-submitted="handleNicknameSubmitted"
+    />
   </b-container>
 </template>
 
 <script>
 import { mapState, mapActions } from 'vuex';
 import ChatInput from '@/components/ChatInput.vue';
+import UserNicknameModal from '@/components/UserNicknameModal.vue';
 import apiService from '@/services/ApiService';
 
 export default {
   name: 'ChatRoom',
   components: {
     ChatInput,
+    UserNicknameModal,
   },
   props: {
     sessionId: {
@@ -115,7 +123,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(['messages', 'isLoading', 'currentAgent']),
+    ...mapState(['messages', 'isLoading', 'currentAgent', 'user', 'isUserLoggedIn']),
     storeSessionId() {
       return this.$store.state.sessionId;
     },
@@ -164,6 +172,7 @@ export default {
         await apiService.sendStreamingMessage(
           message,
           this.currentSessionId,
+          this.getCurrentUserId(), // 기본 사용자 ID 추가
           (chunk) => {
             // Update streaming content
             this.streamingContent += chunk;
@@ -277,6 +286,33 @@ export default {
     generateSessionId() {
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     },
+    getCurrentUserId() {
+      return this.user?.id || 'user_default';
+    },
+    handleNicknameSubmitted(userInfo) {
+      // Store user information in Vuex
+      const user = {
+        id: userInfo.userId,
+        nickname: userInfo.nickname,
+        createdAt: new Date(),
+      };
+      
+      this.$store.commit('updateUser', user);
+      
+      // Show welcome message with nickname
+      this.addWelcomeMessage(userInfo.nickname);
+    },
+    addWelcomeMessage(nickname) {
+      const welcomeMessage = {
+        id: Date.now(),
+        role: 'assistant',
+        content: `안녕하세요 ${nickname}님! 👋\n\n멀티 에이전트 챗봇 시스템에 오신 것을 환영합니다!\n\n저는 4개의 전문 에이전트가 협력하는 AI 시스템입니다:\n- 📚 **문서 검색**: "API 사용법을 알려줘"\n- 🔍 **웹 검색**: "최신 기술 뉴스 검색"\n- 💬 **일반 대화**: "AI에 대해 설명해줘"\n\n무엇을 도와드릴까요? 🎯`,
+        timestamp: new Date(),
+        agent_type: 'general',
+        welcome: true,
+      };
+      this.$store.commit('addMessage', welcomeMessage);
+    },
   },
   async mounted() {
     // Initialize session or use existing
@@ -284,17 +320,14 @@ export default {
       this.$store.commit('updateSessionId', this.sessionId);
     }
 
-    // Add welcome message if no messages exist
-    if (this.messages.length === 0) {
-      const welcomeMessage = {
-        id: Date.now(),
-        role: 'assistant',
-        content: `안녕하세요! 👋\n\n멀티 에이전트 챗봇 시스템에 오신 것을 환영합니다!\n\n저는 4개의 전문 에이전트가 협력하는 AI 시스템입니다:\n- 📚 **문서 검색**: "API 사용법을 알려줘"\n- 🔍 **웹 검색**: "최신 기술 뉴스 검색"\n- 💬 **일반 대화**: "AI에 대해 설명해줘"\n\n무엇을 도와드릴까요? 🎯`,
-        timestamp: new Date(),
-        agent_type: 'general',
-        welcome: true,
-      };
-      this.$store.commit('addMessage', welcomeMessage);
+    // Show nickname modal if user is not logged in
+    if (!this.isUserLoggedIn) {
+      this.$nextTick(() => {
+        this.$refs.nicknameModal.show();
+      });
+    } else if (this.messages.length === 0) {
+      // Add welcome message if user is logged in but no messages exist
+      this.addWelcomeMessage(this.user.nickname);
     }
   },
 };
