@@ -8,6 +8,16 @@ interface HealthCheckResponse {
   timestamp: string;
 }
 
+interface UserResponse {
+  id: string;
+  nickname: string;
+  createdAt: string;
+}
+
+interface UserLoginRequest {
+  nickname: string;
+}
+
 // TODO: 서버에 구현되면 활성화할 인터페이스들
 // interface ChatHistoryResponse {
 //   messages: any[];
@@ -78,6 +88,17 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       throw new Error(`Health check failed: ${error.message}`);
+    }
+  }
+
+  // User registration/login with nickname
+  async loginWithNickname(nickname: string): Promise<UserResponse> {
+    try {
+      const request: UserLoginRequest = { nickname };
+      const response = await this.client.post<UserResponse>('/users/login', request);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(`User login failed: ${error.message}`);
     }
   }
 

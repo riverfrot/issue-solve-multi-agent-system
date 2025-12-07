@@ -65,6 +65,9 @@ export default class App extends Vue {
   }
 
   async mounted(): Promise<void> {
+    // Load user from localStorage
+    this.$store.commit('loadUserFromStorage');
+    
     await this.checkConnection();
   }
 }

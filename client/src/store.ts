@@ -56,9 +56,24 @@ const store: StoreOptions<AppState> = {
     },
     updateUser(state: AppState, user: User) {
       state.user = user;
+      // Save to localStorage
+      localStorage.setItem('user', JSON.stringify(user));
     },
     clearUser(state: AppState) {
       state.user = null;
+      // Remove from localStorage
+      localStorage.removeItem('user');
+    },
+    loadUserFromStorage(state: AppState) {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          state.user = JSON.parse(storedUser);
+        }
+      } catch (error) {
+        console.error('Failed to load user from localStorage:', error);
+        localStorage.removeItem('user');
+      }
     },
   },
   getters: {

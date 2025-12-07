@@ -289,18 +289,34 @@ export default {
     getCurrentUserId() {
       return this.user?.id || 'user_default';
     },
-    handleNicknameSubmitted(userInfo) {
-      // Store user information in Vuex
-      const user = {
-        id: userInfo.userId,
-        nickname: userInfo.nickname,
-        createdAt: new Date(),
-      };
-      
-      this.$store.commit('updateUser', user);
-      
-      // Show welcome message with nickname
-      this.addWelcomeMessage(userInfo.nickname);
+    async handleNicknameSubmitted(userInfo) {
+      try {
+        // Register/login user on server
+        const serverUser = await apiService.loginWithNickname(userInfo.nickname);
+        
+        // Store user information in Vuex with server-generated ID
+        const user = {
+          id: serverUser.id,
+          nickname: serverUser.nickname,
+          createdAt: new Date(serverUser.createdAt),
+        };
+        
+        this.$store.commit('updateUser', user);
+        
+        // Show welcome message with nickname
+        this.addWelcomeMessage(userInfo.nickname);
+      } catch (error) {
+        console.error('Failed to register user:', error);
+        // Fallback: use client-generated ID if server fails
+        const user = {
+          id: userInfo.userId,
+          nickname: userInfo.nickname,
+          createdAt: new Date(),
+        };
+        
+        this.$store.commit('updateUser', user);
+        this.addWelcomeMessage(userInfo.nickname);
+      }
     },
     addWelcomeMessage(nickname) {
       const welcomeMessage = {
