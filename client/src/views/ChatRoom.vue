@@ -132,6 +132,14 @@ export default {
     },
   },
   watch: {
+    isUserLoggedIn(newValue) {
+      // If user logs out, show nickname modal
+      if (!newValue) {
+        this.$nextTick(() => {
+          this.$refs.nicknameModal?.show();
+        });
+      }
+    },
     messages: {
       handler() {
         this.scrollToBottom();

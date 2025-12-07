@@ -123,6 +123,18 @@ const store: StoreOptions<AppState> = {
       commit('addMessage', errorMessage);
       return errorMessage;
     },
+    logout({ commit }) {
+      // Clear all user data
+      commit('clearUser');
+      // Clear all messages
+      commit('updateMessages', []);
+      // Reset session
+      commit('updateSessionId', null);
+      // Reset loading state
+      commit('updateIsLoading', false);
+      // Reset agent status
+      commit('updateAgentStatus', '4개 전문 에이전트 대기 중');
+    },
   },
 };
 

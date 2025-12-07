@@ -13,9 +13,17 @@
     <b-navbar-nav class="ml-auto">
       <!-- User Info -->
       <b-nav-item v-if="user" class="d-flex align-items-center mr-3">
-        <span class="text-light">
+        <span class="text-light mr-2">
           👤 {{ user.nickname }}
         </span>
+        <b-button
+          @click="handleLogout"
+          variant="outline-light"
+          size="sm"
+          class="logout-btn"
+        >
+          로그아웃
+        </b-button>
       </b-nav-item>
       
       <!-- Connection Status -->
@@ -48,6 +56,28 @@ export default class ChatHeader extends Vue {
 
   @Prop({ type: Object, default: null })
   user!: User | null;
+
+  handleLogout(): void {
+    this.$bvModal.msgBoxConfirm('로그아웃 하시겠습니까?', {
+      title: '로그아웃 확인',
+      size: 'sm',
+      buttonSize: 'sm',
+      okVariant: 'danger',
+      okTitle: '로그아웃',
+      cancelTitle: '취소',
+      footerClass: 'p-2',
+      hideHeaderClose: false,
+      centered: true
+    })
+    .then((value: boolean) => {
+      if (value) {
+        this.$emit('logout');
+      }
+    })
+    .catch(() => {
+      // User cancelled
+    });
+  }
 }
 </script>
 
@@ -70,6 +100,18 @@ export default class ChatHeader extends Vue {
     
     &.status-disconnected {
       background-color: #dc3545;
+    }
+  }
+
+  .logout-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
     }
   }
 }

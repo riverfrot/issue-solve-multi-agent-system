@@ -4,6 +4,7 @@
       :connection-status="connectionStatus"
       :agent-status="agentStatus"
       :user="user"
+      @logout="handleLogout"
     />
     <router-view id="content" :key="$route.path" />
     <chat-footer />
@@ -62,6 +63,11 @@ export default class App extends Vue {
 
   updateRouteContext(): void {
     // Route change handling logic
+  }
+
+  handleLogout(): void {
+    // Logout action
+    this.$store.dispatch('logout');
   }
 
   async mounted(): Promise<void> {
