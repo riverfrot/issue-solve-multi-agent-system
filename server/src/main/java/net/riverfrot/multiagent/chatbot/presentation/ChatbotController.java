@@ -26,8 +26,9 @@ public class ChatbotController {
     
     @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chatStream(@RequestParam(required = true) String message, 
-                                @RequestParam(required = true) String sessionId) {
-        return chatbotService.processStreamingChat(message, sessionId);
+                                @RequestParam(required = true) String sessionId,
+                                @RequestParam(required = true) String userId) {
+        return chatbotService.processStreamingChat(message, sessionId, userId);
     }
     
     @GetMapping("/health")
