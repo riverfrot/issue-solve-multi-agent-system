@@ -1,5 +1,6 @@
 package net.riverfrot.multiagent.chatbot.domain;
 
+import net.riverfrot.multiagent.user.domain.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -30,7 +31,11 @@ public class Conversation {
     @OrderBy("timestamp ASC")
     private final List<ChatMessage> messages;
     
-    @Column(name = "user_id", nullable = false, length = 100)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private final User user;
+    
+    @Column(name = "user_id", insertable = false, updatable = false)
     private final String userId;
     
     @Column(name = "started_at", nullable = false)
@@ -40,6 +45,7 @@ public class Conversation {
     protected Conversation() {
         this.sessionId = UUID.randomUUID().toString();
         this.messages = new ArrayList<>();
+        this.user = null;
         this.userId = null;
         this.startedAt = LocalDateTime.now();
     }
@@ -47,7 +53,8 @@ public class Conversation {
     private Conversation(Builder builder) {
         this.sessionId = builder.sessionId != null ? builder.sessionId : UUID.randomUUID().toString();
         this.messages = new ArrayList<>(); // 빈 리스트로 시작
-        this.userId = builder.userId;
+        this.user = builder.user;
+        this.userId = builder.user != null ? builder.user.getId() : null;
         this.startedAt = builder.startedAt != null ? builder.startedAt : LocalDateTime.now();
     }
 
@@ -121,7 +128,7 @@ public class Conversation {
 
     public static class Builder {
         private String sessionId;
-        private String userId;
+        private User user;
         private LocalDateTime startedAt;
 
         public Builder sessionId(String sessionId) {
@@ -129,8 +136,8 @@ public class Conversation {
             return this;
         }
 
-        public Builder userId(String userId) {
-            this.userId = userId;
+        public Builder user(User user) {
+            this.user = user;
             return this;
         }
 
@@ -149,16 +156,20 @@ public class Conversation {
     }
 
     // 대화시작
-    public static Conversation startNewSession(String userId) {
+    public static Conversation startNewSession(User user) {
         return builder()
-                .userId(userId)
+                .user(user)
                 .build();
     }
 
-    public static Conversation withSessionId(String sessionId, String userId) {
+    public static Conversation withSessionId(String sessionId, User user) {
         return builder()
                 .sessionId(sessionId)
-                .userId(userId)
+                .user(user)
                 .build();
+    }
+    
+    public User getUser() {
+        return user;
     }
 }

@@ -4,7 +4,7 @@
 
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
-import { AppState, Message, ApiResponse } from './types';
+import { AppState, Message, ApiResponse, User } from './types';
 
 Vue.use(Vuex);
 
@@ -16,6 +16,7 @@ const store: StoreOptions<AppState> = {
     currentAgent: 'supervisor',
     sessionId: null,
     agentStatus: '4개 전문 에이전트 대기 중',
+    user: null,
   },
   mutations: {
     updateMessages(state: AppState, messages: Message[]) {
@@ -53,6 +54,27 @@ const store: StoreOptions<AppState> = {
         }
       }
     },
+    updateUser(state: AppState, user: User) {
+      state.user = user;
+      // Save to localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+    },
+    clearUser(state: AppState) {
+      state.user = null;
+      // Remove from localStorage
+      localStorage.removeItem('user');
+    },
+    loadUserFromStorage(state: AppState) {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          state.user = JSON.parse(storedUser);
+        }
+      } catch (error) {
+        console.error('Failed to load user from localStorage:', error);
+        localStorage.removeItem('user');
+      }
+    },
   },
   getters: {
     messages: (state: AppState) => state.messages,
@@ -61,6 +83,8 @@ const store: StoreOptions<AppState> = {
     currentAgent: (state: AppState) => state.currentAgent,
     sessionId: (state: AppState) => state.sessionId,
     agentStatus: (state: AppState) => state.agentStatus,
+    user: (state: AppState) => state.user,
+    isUserLoggedIn: (state: AppState) => state.user !== null,
   },
   actions: {
     addUserMessage({ commit }, message: string): Message {
@@ -98,6 +122,18 @@ const store: StoreOptions<AppState> = {
       };
       commit('addMessage', errorMessage);
       return errorMessage;
+    },
+    logout({ commit }) {
+      // Clear all user data
+      commit('clearUser');
+      // Clear all messages
+      commit('updateMessages', []);
+      // Reset session
+      commit('updateSessionId', null);
+      // Reset loading state
+      commit('updateIsLoading', false);
+      // Reset agent status
+      commit('updateAgentStatus', '4개 전문 에이전트 대기 중');
     },
   },
 };

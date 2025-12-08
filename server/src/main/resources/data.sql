@@ -1,3 +1,8 @@
+-- 테스트 사용자 생성 (외래키 참조를 위해 먼저 삽입)
+INSERT INTO users (id, nickname, created_at) VALUES 
+('user001', '테스트유저1', '2024-01-15 09:00:00'),
+('user002', '테스트유저2', '2024-01-16 08:00:00');
+
 -- 테스트 대화 세션 생성
 INSERT INTO conversations (session_id, user_id, started_at) VALUES 
 ('test-session-001', 'user001', '2024-01-15 10:00:00'),

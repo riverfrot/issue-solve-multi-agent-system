@@ -8,6 +8,8 @@ import net.riverfrot.multiagent.chatbot.domain.ConversationRepository;
 import net.riverfrot.multiagent.chatbot.dto.ChatRequest;
 import net.riverfrot.multiagent.chatbot.dto.ChatResponse;
 import net.riverfrot.multiagent.chatbot.dto.StreamingResponse;
+import net.riverfrot.multiagent.user.application.UserService;
+import net.riverfrot.multiagent.user.domain.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +24,19 @@ public class ChatbotService {
     
     private final ChatMessageRepository chatMessageRepository;
     private final ConversationRepository conversationRepository;
+    private final UserService userService;
     // python multi agent 붙이기전 테스트 서비스
     private final AIMockService aiMockService;
     private final ObjectMapper objectMapper;
     
     public ChatbotService(ChatMessageRepository chatMessageRepository, 
                          ConversationRepository conversationRepository,
+                         UserService userService,
                          AIMockService aiMockService,
                          ObjectMapper objectMapper) {
         this.chatMessageRepository = chatMessageRepository;
         this.conversationRepository = conversationRepository;
+        this.userService = userService;
         this.aiMockService = aiMockService;
         this.objectMapper = objectMapper;
     }
@@ -39,7 +44,11 @@ public class ChatbotService {
 
     @Transactional
     public ChatResponse processChat(ChatRequest request) {
-        Conversation conversation = getOrCreateConversation(request.sessionId());
+        User user = userService.findById(request.userId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + request.userId()));
+        
+        
+        Conversation conversation = getOrCreateConversation(request.sessionId(), user);
     
         ChatMessage userMessage = ChatMessage.createUserMessage(
             request.sessionId(), 
@@ -65,13 +74,17 @@ public class ChatbotService {
      * SSE 기반 스트리밍 채팅 처리
      * Virtual Thread에서 비동기적으로 응답을 분할하여 전송
      */
-    public SseEmitter processStreamingChat(String message, String sessionId) {
+    public SseEmitter processStreamingChat(String message, String sessionId, String userId) {
         SseEmitter emitter = new SseEmitter(30000L); // 30초 타임아웃
         
         // 비동기 처리를 위한 CompletableFuture 사용 (Virtual Thread)
         CompletableFuture.runAsync(() -> {
             try {
-                saveUserMessage(sessionId, message);
+                User user = userService.findById(userId)
+                        .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                
+                
+                saveUserMessage(sessionId, message, user);
 
                 // AI 메시지 사용 추후 kafka 이벤트 메시지 스트림 방식으로 변경 필요 
                 // 실제 연동전에 
@@ -95,7 +108,7 @@ public class ChatbotService {
                     Thread.sleep(100);
                 }
                 
-                saveAssistantMessage(sessionId, aiResponse, agentType);
+                saveAssistantMessage(sessionId, aiResponse, agentType, user);
                 
                 emitter.complete();
                 
@@ -112,23 +125,23 @@ public class ChatbotService {
     }
     
     @Transactional
-    private void saveUserMessage(String sessionId, String message) {
-        getOrCreateConversation(sessionId);
+    private void saveUserMessage(String sessionId, String message, User user) {
+        getOrCreateConversation(sessionId, user);
         ChatMessage userMessage = ChatMessage.createUserMessage(sessionId, message);
         chatMessageRepository.save(userMessage);
     }
     
     @Transactional 
-    private void saveAssistantMessage(String sessionId, String response, AgentType agentType) {
+    private void saveAssistantMessage(String sessionId, String response, AgentType agentType, User user) {
         ChatMessage assistantMessage = ChatMessage.createAssistantMessage(
                 sessionId, response, agentType);
         chatMessageRepository.save(assistantMessage);
     }
     
-    private Conversation getOrCreateConversation(String sessionId) {
+    private Conversation getOrCreateConversation(String sessionId, User user) {
         return conversationRepository.findBySessionId(sessionId)
                 .orElseGet(() -> {
-                    Conversation newConversation = Conversation.withSessionId(sessionId, "default-user");
+                    Conversation newConversation = Conversation.withSessionId(sessionId, user);
                     return conversationRepository.save(newConversation);
                 });
     }

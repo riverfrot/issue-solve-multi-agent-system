@@ -2,7 +2,9 @@
   <div id="app">
     <chat-header 
       :connection-status="connectionStatus"
-      :agent-status="agentStatus" 
+      :agent-status="agentStatus"
+      :user="user"
+      @logout="handleLogout"
     />
     <router-view id="content" :key="$route.path" />
     <chat-footer />
@@ -11,6 +13,7 @@
 
 <script lang="ts">
 import { Vue, Component } from 'vue-property-decorator';
+import { mapState } from 'vuex';
 import ChatHeader from './components/ChatHeader.vue';
 import ChatFooter from './components/ChatFooter.vue';
 import apiService from './services/ApiService';
@@ -19,6 +22,9 @@ import apiService from './services/ApiService';
   components: {
     ChatHeader,
     ChatFooter,
+  },
+  computed: {
+    ...mapState(['user']),
   },
 })
 export default class App extends Vue {
@@ -59,7 +65,15 @@ export default class App extends Vue {
     // Route change handling logic
   }
 
+  handleLogout(): void {
+    // Logout action
+    this.$store.dispatch('logout');
+  }
+
   async mounted(): Promise<void> {
+    // Load user from localStorage
+    this.$store.commit('loadUserFromStorage');
+    
     await this.checkConnection();
   }
 }
