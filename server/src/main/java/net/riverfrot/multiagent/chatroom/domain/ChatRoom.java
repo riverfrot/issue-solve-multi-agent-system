@@ -67,11 +67,6 @@ public class ChatRoom {
         this.updatedAt = LocalDateTime.now();
     }
     
-    public void updateLastMessageTime() {
-        this.lastMessageAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-    
     public boolean isOwnedBy(String userId) {
         return this.userId.equals(userId);
     }
