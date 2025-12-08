@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1/chatrooms")
+@RequestMapping("/chatrooms")
 public class ChatRoomController {
     
     private final ChatRoomService chatRoomService;

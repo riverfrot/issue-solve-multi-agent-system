@@ -45,7 +45,7 @@ class ChatRoomControllerTest {
         when(chatRoomService.createChatRoom(userId, title)).thenReturn(mockChatRoom);
         
         // When & Then
-        mockMvc.perform(post("/api/v1/chatrooms")
+        mockMvc.perform(post("/api/chatrooms")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -66,7 +66,7 @@ class ChatRoomControllerTest {
         when(chatRoomService.createChatRoom(userId)).thenReturn(mockChatRoom);
         
         // When & Then
-        mockMvc.perform(post("/api/v1/chatrooms")
+        mockMvc.perform(post("/api/chatrooms")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -85,7 +85,7 @@ class ChatRoomControllerTest {
                 .thenThrow(new IllegalArgumentException("User ID는 비어있을 수 없습니다."));
         
         // When & Then
-        mockMvc.perform(post("/api/v1/chatrooms")
+        mockMvc.perform(post("/api/chatrooms")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -103,7 +103,7 @@ class ChatRoomControllerTest {
         when(chatRoomService.getChatRoomsByUser(userId)).thenReturn(chatRooms);
         
         // When & Then
-        mockMvc.perform(get("/api/v1/chatrooms")
+        mockMvc.perform(get("/api/chatrooms")
                 .param("user_id", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -116,7 +116,7 @@ class ChatRoomControllerTest {
     @DisplayName("사용자별 채팅방 목록 조회 - 잘못된 사용자 ID로 실패")
     void getChatRoomsByUser_InvalidUserId_BadRequest() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/v1/chatrooms")
+        mockMvc.perform(get("/api/chatrooms")
                 .param("user_id", ""))
                 .andExpect(status().isBadRequest());
     }
@@ -131,7 +131,7 @@ class ChatRoomControllerTest {
         when(chatRoomService.getChatRoom(chatRoomId)).thenReturn(Optional.of(mockChatRoom));
         
         // When & Then
-        mockMvc.perform(get("/api/v1/chatrooms/{chatRoomId}", chatRoomId))
+        mockMvc.perform(get("/api/chatrooms/{chatRoomId}", chatRoomId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("테스트 채팅방"));
         
@@ -147,7 +147,7 @@ class ChatRoomControllerTest {
         when(chatRoomService.getChatRoom(chatRoomId)).thenReturn(Optional.empty());
         
         // When & Then
-        mockMvc.perform(get("/api/v1/chatrooms/{chatRoomId}", chatRoomId))
+        mockMvc.perform(get("/api/chatrooms/{chatRoomId}", chatRoomId))
                 .andExpect(status().isNotFound());
         
         verify(chatRoomService).getChatRoom(chatRoomId);
@@ -167,7 +167,7 @@ class ChatRoomControllerTest {
                 .thenReturn(updatedChatRoom);
         
         // When & Then
-        mockMvc.perform(put("/api/v1/chatrooms/{chatRoomId}", chatRoomId)
+        mockMvc.perform(put("/api/chatrooms/{chatRoomId}", chatRoomId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -189,7 +189,7 @@ class ChatRoomControllerTest {
                 .thenThrow(new IllegalArgumentException("채팅방을 수정할 권한이 없습니다."));
         
         // When & Then
-        mockMvc.perform(put("/api/v1/chatrooms/{chatRoomId}", chatRoomId)
+        mockMvc.perform(put("/api/chatrooms/{chatRoomId}", chatRoomId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -206,7 +206,7 @@ class ChatRoomControllerTest {
         doNothing().when(chatRoomService).deleteChatRoom(chatRoomId, userId);
         
         // When & Then
-        mockMvc.perform(delete("/api/v1/chatrooms/{chatRoomId}", chatRoomId)
+        mockMvc.perform(delete("/api/chatrooms/{chatRoomId}", chatRoomId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent());
@@ -226,7 +226,7 @@ class ChatRoomControllerTest {
                 .when(chatRoomService).deleteChatRoom(chatRoomId, userId);
         
         // When & Then
-        mockMvc.perform(delete("/api/v1/chatrooms/{chatRoomId}", chatRoomId)
+        mockMvc.perform(delete("/api/chatrooms/{chatRoomId}", chatRoomId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
