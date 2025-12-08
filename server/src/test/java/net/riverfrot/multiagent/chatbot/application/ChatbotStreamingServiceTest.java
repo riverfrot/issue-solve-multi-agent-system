@@ -2,6 +2,8 @@ package net.riverfrot.multiagent.chatbot.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.riverfrot.multiagent.chatbot.domain.*;
+import net.riverfrot.multiagent.user.application.UserService;
+import net.riverfrot.multiagent.user.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,9 @@ class ChatbotStreamingServiceTest {
     private ConversationRepository conversationRepository;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     private AIMockService aiMockService;
 
     private ChatbotService chatbotService;
@@ -39,9 +44,14 @@ class ChatbotStreamingServiceTest {
         chatbotService = new ChatbotService(
                 chatMessageRepository,
                 conversationRepository,
+                userService,
                 aiMockService,
                 objectMapper
         );
+        
+        // Mock user setup
+        User mockUser = User.createWithNickname("testUser");
+        when(userService.findById(anyString())).thenReturn(Optional.of(mockUser));
     }
 
     @Test
@@ -50,9 +60,10 @@ class ChatbotStreamingServiceTest {
         // Given
         String message = "테스트 메시지";
         String sessionId = "test-session";
+        String userId = "test-user";
         
         // When
-        SseEmitter result = chatbotService.processStreamingChat(message, sessionId);
+        SseEmitter result = chatbotService.processStreamingChat(message, sessionId, userId);
 
         // Then
         assertNotNull(result);
@@ -65,9 +76,10 @@ class ChatbotStreamingServiceTest {
         // Given
         String message = "타임아웃 테스트";
         String sessionId = "timeout-session";
+        String userId = "test-user";
 
         // When
-        SseEmitter result = chatbotService.processStreamingChat(message, sessionId);
+        SseEmitter result = chatbotService.processStreamingChat(message, sessionId, userId);
 
         // Then
         assertNotNull(result);

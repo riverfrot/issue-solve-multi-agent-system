@@ -36,13 +36,19 @@ class ChatbotServiceTest {
     
     private User testUser;
     
+    @BeforeEach
+    void setUp() {
+        // 테스트용 사용자 생성
+        testUser = userService.getOrCreateUser("테스트유저");
+    }
+    
     @Test
     @DisplayName("채팅 처리 - DB에 메시지 저장 확인")
     void processChat_shouldSaveMessagesToDatabase() {
         // Given
         String sessionId = "test-session-123";
         String userMessage = "안녕하세요!";
-        ChatRequest request = new ChatRequest(sessionId, userMessage);
+        ChatRequest request = new ChatRequest(sessionId, userMessage, testUser.getId());
         
         // When
         ChatResponse response = chatbotService.processChat(request);
@@ -66,11 +72,11 @@ class ChatbotServiceTest {
         String sessionId = "existing-session";
         
         // 첫 번째 메시지
-        ChatRequest firstRequest = new ChatRequest(sessionId, "첫 번째 메시지");
+        ChatRequest firstRequest = new ChatRequest(sessionId, "첫 번째 메시지", testUser.getId());
         chatbotService.processChat(firstRequest);
         
         // When - 두 번째 메시지
-        ChatRequest secondRequest = new ChatRequest(sessionId, "두 번째 메시지");
+        ChatRequest secondRequest = new ChatRequest(sessionId, "두 번째 메시지", testUser.getId());
         chatbotService.processChat(secondRequest);
         
         // Then
