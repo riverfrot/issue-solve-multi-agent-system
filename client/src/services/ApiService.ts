@@ -84,7 +84,7 @@ class ApiService {
   // Health check
   async healthCheck(): Promise<HealthCheckResponse> {
     try {
-      const response = await this.client.get<HealthCheckResponse>('/chatbot/health');
+      const response = await this.client.get<HealthCheckResponse>('/health');
       return response.data;
     } catch (error: any) {
       throw new Error(`Health check failed: ${error.message}`);
