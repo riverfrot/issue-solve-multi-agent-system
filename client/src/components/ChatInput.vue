@@ -4,7 +4,6 @@
       <b-form-textarea
         ref="messageInput"
         v-model="message"
-        @keydown.enter.prevent="handleEnterKey"
         @keydown="handleKeydown"
         :disabled="disabled"
         :placeholder="disabled ? 'AI가 응답 중입니다...' : '메시지를 입력하세요... (Shift+Enter: 줄바꿈, Enter: 전송)'"
@@ -75,23 +74,30 @@ export default class ChatInput extends Vue {
       return;
     }
 
-    this.$emit('send-message', trimmedMessage);
+    // 메시지 전송 전에 즉시 클리어
     this.message = '';
     this.rows = 1;
-    this.focusInput();
-  }
-
-  handleEnterKey(event: KeyboardEvent): void {
-    if (!event.shiftKey) {
-      this.sendMessage();
-    }
+    
+    // 이벤트 발송
+    this.$emit('send-message', trimmedMessage);
+    
+    // Vue.nextTick을 사용하여 확실히 클리어
+    this.$nextTick(() => {
+      this.message = '';
+      this.focusInput();
+    });
   }
 
   handleKeydown(event: KeyboardEvent): void {
-    // Allow Shift+Enter for new lines
-    if (event.key === 'Enter' && event.shiftKey) {
-      // Let the default behavior handle this
-      return;
+    if (event.key === 'Enter') {
+      if (!event.shiftKey) {
+        // 일반 Enter: 메시지 전송
+        event.preventDefault();
+        this.sendMessage();
+      } else {
+        // Shift+Enter: 줄바꿈 (기본 동작 허용)
+        return;
+      }
     }
   }
 
