@@ -1,5 +1,6 @@
 package net.riverfrot.multiagent.chatbot.domain;
 
+import net.riverfrot.multiagent.user.domain.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,8 @@ class ChatbotDomainTest {
     @DisplayName("다른 세션 ID의 메시지 추가 시 예외가 발생해야 한다")
     void conversation_shouldRejectMessageFromDifferentSession() {
         // given: 특정 세션의 대화와 다른 세션의 메시지
-        Conversation conversation = Conversation.withSessionId("session-A", "user-123");
+        User testUser = User.createWithNickname("테스트유저");
+        Conversation conversation = Conversation.withSessionId("session-A", testUser);
         ChatMessage wrongSessionMessage = ChatMessage.createUserMessage("session-B", "잘못된 세션 메시지");
         
         // when & then: 예외가 발생해야 함

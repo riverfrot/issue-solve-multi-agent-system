@@ -24,12 +24,10 @@ import apiService from './services/ApiService';
     ChatFooter,
   },
   computed: {
-    ...mapState(['user']),
+    ...mapState(['user', 'connectionStatus', 'agentStatus']),
   },
 })
 export default class App extends Vue {
-  connectionStatus: string = 'disconnected';
-  agentStatus: string = '4개 전문 에이전트 대기 중';
   sessionId: string = this.generateSessionId();
 
   get currentRoute(): string {
@@ -50,14 +48,14 @@ export default class App extends Vue {
 
   async checkConnection(): Promise<void> {
     try {
-      this.connectionStatus = 'connecting';
+      this.$store.commit('updateConnectionStatus', 'connecting');
       await apiService.healthCheck();
-      this.connectionStatus = 'connected';
-      this.agentStatus = '🎯 Supervisor, 📚 RAG,  🔍 Search, 💬 General';
+      this.$store.commit('updateConnectionStatus', 'connected');
+      this.$store.commit('updateAgentStatus', '🎯 Supervisor, 📚 RAG,  🔍 Search, 💬 General');
     } catch (error) {
       console.error('Connection failed:', error);
-      this.connectionStatus = 'disconnected';
-      this.agentStatus = '서버 연결 실패';
+      this.$store.commit('updateConnectionStatus', 'disconnected');
+      this.$store.commit('updateAgentStatus', '서버 연결 실패');
     }
   }
 
@@ -68,6 +66,11 @@ export default class App extends Vue {
   handleLogout(): void {
     // Logout action
     this.$store.dispatch('logout');
+    
+    // Redirect to home page after logout
+    if ((this as any).$route.path !== '/') {
+      (this as any).$router.push('/');
+    }
   }
 
   async mounted(): Promise<void> {

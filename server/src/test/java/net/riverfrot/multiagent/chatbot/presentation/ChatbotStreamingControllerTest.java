@@ -32,13 +32,14 @@ class ChatbotStreamingControllerTest {
         String sessionId = "test-session-123";
         SseEmitter mockEmitter = new SseEmitter();
 
-        when(chatbotService.processStreamingChat(anyString(), anyString()))
+        when(chatbotService.processStreamingChat(anyString(), anyString(), anyString()))
                 .thenReturn(mockEmitter);
 
         // When & Then
         mockMvc.perform(get("/chatbot/chat/stream")
                         .param("message", message)
-                        .param("sessionId", sessionId))
+                        .param("sessionId", sessionId)
+                        .param("userId", "test-user"))
                 .andExpect(status().isOk());
     }
 
@@ -47,12 +48,14 @@ class ChatbotStreamingControllerTest {
     void chatStream_shouldReturnBadRequestWhenMissingParameters() throws Exception {
         // When & Then - message 파라미터 누락
         mockMvc.perform(get("/chatbot/chat/stream")
-                        .param("sessionId", "test-session"))
+                        .param("sessionId", "test-session")
+                        .param("userId", "test-user"))
                 .andExpect(status().isBadRequest());
 
         // When & Then - sessionId 파라미터 누락
         mockMvc.perform(get("/chatbot/chat/stream")
-                        .param("message", "안녕하세요"))
+                        .param("message", "안녕하세요")
+                        .param("userId", "test-user"))
                 .andExpect(status().isBadRequest());
     }
 }

@@ -3,7 +3,6 @@ package net.riverfrot.multiagent.chatbot.domain;
 import net.riverfrot.multiagent.user.domain.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
