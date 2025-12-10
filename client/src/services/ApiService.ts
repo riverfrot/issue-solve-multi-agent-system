@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ApiResponse } from '@/types';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = 'http://localhost:8000/api';
 
 interface HealthCheckResponse {
   status: string;
