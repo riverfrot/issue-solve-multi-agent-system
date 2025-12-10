@@ -41,11 +41,14 @@ interface ChatRoomResponse {
   last_message_at?: string;
 }
 
-// TODO: 서버에 구현되면 활성화할 인터페이스들
-// interface ChatHistoryResponse {
-//   messages: any[];
-//   session_id: string;
-// }
+interface ChatHistoryResponse {
+  id: string;
+  sessionId: string;
+  content: string;
+  role: string;
+  agentType?: string;
+  timestamp: string;
+}
 
 // interface SessionResponse {
 //   message: string;
@@ -139,17 +142,15 @@ class ApiService {
     }
   }
 
-  // TODO: 서버에 구현되면 활성화할 엔드포인트들
-  
-  // Get chat history - 서버에 구현 필요
-  // async getChatHistory(sessionId: string): Promise<ChatHistoryResponse> {
-  //   try {
-  //     const response = await this.client.get<ChatHistoryResponse>(`/chatbot/history/${sessionId}`);
-  //     return response.data;
-  //   } catch (error: any) {
-  //     throw new Error(`Failed to get chat history: ${error.message}`);
-  //   }
-  // }
+  // Get chat history
+  async getChatHistory(sessionId: string): Promise<ChatHistoryResponse[]> {
+    try {
+      const response = await this.client.get<ChatHistoryResponse[]>(`/chatbot/history/${sessionId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(`Failed to get chat history: ${error.message}`);
+    }
+  }
 
   // Clear session - 서버에 구현 필요
   // async clearSession(sessionId: string): Promise<SessionResponse> {
