@@ -7,6 +7,7 @@ import net.riverfrot.multiagent.chatbot.domain.Conversation;
 import net.riverfrot.multiagent.chatbot.domain.ConversationRepository;
 import net.riverfrot.multiagent.chatbot.dto.ChatRequest;
 import net.riverfrot.multiagent.chatbot.dto.ChatResponse;
+import net.riverfrot.multiagent.chatbot.dto.ChatMessageResponse;
 import net.riverfrot.multiagent.chatbot.dto.StreamingResponse;
 import net.riverfrot.multiagent.user.application.UserService;
 import net.riverfrot.multiagent.user.domain.User;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatbotService {
@@ -42,34 +44,6 @@ public class ChatbotService {
         this.objectMapper = objectMapper;
     }
     
-
-    @Transactional
-    public ChatResponse processChat(ChatRequest request) {
-        User user = userService.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + request.userId()));
-        
-        
-        Conversation conversation = getOrCreateConversation(request.sessionId(), user);
-    
-        ChatMessage userMessage = ChatMessage.createUserMessage(
-            request.sessionId(), 
-            request.message()
-        );
-    
-        chatMessageRepository.save(userMessage);
-        
-        String aiResponse = aiMockService.generateResponse(request.message());
-        AgentType agentType = AgentType.GENERAL;
-        
-        ChatMessage assistantMessage = ChatMessage.createAssistantMessage(
-            request.sessionId(),
-            aiResponse,
-            agentType
-        );
-        chatMessageRepository.save(assistantMessage);
-        
-        return new ChatResponse(request.sessionId(), aiResponse, agentType.getCode());
-    }
     
     /**
      * SSE 기반 스트리밍 채팅 처리
@@ -119,6 +93,17 @@ public class ChatbotService {
         });
         
         return emitter;
+    }
+    
+    /**
+     * 채팅 기록 조회
+     * 세션 ID에 해당하는 모든 메시지를 시간순으로 조회
+     */
+    public List<ChatMessageResponse> getChatHistory(String sessionId) {
+        List<ChatMessage> messages = chatMessageRepository.findBySessionIdOrderByTimestamp(sessionId);
+        return messages.stream()
+                .map(ChatMessageResponse::from)
+                .collect(Collectors.toList());
     }
     
     private List<String> splitTextForTypingEffect(String text) {
