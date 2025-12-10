@@ -75,6 +75,9 @@ const store: StoreOptions<AppState> = {
         localStorage.removeItem('user');
       }
     },
+    clearMessages(state: AppState) {
+      state.messages = [];
+    },
   },
   getters: {
     messages: (state: AppState) => state.messages,
@@ -122,6 +125,31 @@ const store: StoreOptions<AppState> = {
       };
       commit('addMessage', errorMessage);
       return errorMessage;
+    },
+    async loadChatHistory({ commit }, sessionId: string) {
+      try {
+        const apiService = await import('@/services/ApiService');
+        const historyData = await apiService.default.getChatHistory(sessionId);
+        
+        // Convert server response to client Message format
+        const messages: Message[] = historyData.map((item: any) => ({
+          id: item.id,
+          role: item.role,
+          content: item.content,
+          timestamp: new Date(item.timestamp),
+          agent_type: item.agentType || item.role === 'user' ? 'user' : 'general',
+        }));
+        
+        commit('updateMessages', messages);
+        return messages;
+      } catch (error: any) {
+        console.error('Failed to load chat history:', error);
+        throw new Error(`채팅 히스토리 로드 실패: ${error.message}`);
+      }
+    },
+    clearChat({ commit }) {
+      // Clear all messages from UI only
+      commit('clearMessages');
     },
     logout({ commit }) {
       // Clear all user data

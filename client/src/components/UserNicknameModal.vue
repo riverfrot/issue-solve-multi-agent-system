@@ -41,81 +41,91 @@
     <template #modal-footer>
       <b-button
         variant="primary"
-        :disabled="!isNicknameValid"
+        :disabled="!isNicknameValid || isLoading"
         @click="handleSubmit"
         class="px-4"
       >
-        <b-icon icon="check-circle" class="mr-1" />
-        시작하기
+        <b-spinner v-if="isLoading" small class="mr-1" />
+        <b-icon v-else icon="check-circle" class="mr-1" />
+        {{ isLoading ? '로그인 중...' : '시작하기' }}
       </b-button>
     </template>
   </b-modal>
 </template>
 
-<script lang="ts">
-import { Vue, Component } from 'vue-property-decorator';
+<script>
+import apiService from '@/services/ApiService';
 
-@Component
-export default class UserNicknameModal extends Vue {
-  nickname = '';
-
-  get nicknameState(): boolean | null {
-    if (this.nickname.length === 0) return null;
-    return this.isNicknameValid;
-  }
-
-  get isNicknameValid(): boolean {
-    return this.nickname.trim().length > 0 && this.nickname.trim().length <= 50;
-  }
-
-  get nicknameErrorMessage(): string {
-    if (this.nickname.trim().length === 0) {
-      return '닉네임은 비어있을 수 없습니다.';
-    }
-    if (this.nickname.trim().length > 50) {
-      return '닉네임은 50자를 초과할 수 없습니다.';
-    }
-    return '';
-  }
-
-  show(): void {
-    this.$refs.nicknameModal.show();
-  }
-
-  hide(): void {
-    this.$refs.nicknameModal.hide();
-  }
-
-  focusInput(): void {
-    this.$nextTick(() => {
-      if (this.$refs.nicknameInput) {
-        this.$refs.nicknameInput.focus();
+export default {
+  name: 'UserNicknameModal',
+  data() {
+    return {
+      nickname: '',
+      isLoading: false,
+    };
+  },
+  computed: {
+    nicknameState() {
+      if (this.nickname.length === 0) return null;
+      return this.isNicknameValid;
+    },
+    isNicknameValid() {
+      return this.nickname.trim().length > 0 && this.nickname.trim().length <= 50;
+    },
+    nicknameErrorMessage() {
+      if (this.nickname.trim().length === 0) {
+        return '닉네임은 비어있을 수 없습니다.';
       }
-    });
-  }
+      if (this.nickname.trim().length > 50) {
+        return '닉네임은 50자를 초과할 수 없습니다.';
+      }
+      return '';
+    },
+  },
+  methods: {
+    show() {
+      this.$refs.nicknameModal.show();
+    },
+    hide() {
+      this.$refs.nicknameModal.hide();
+    },
+    focusInput() {
+      this.$nextTick(() => {
+        if (this.$refs.nicknameInput) {
+          this.$refs.nicknameInput.focus();
+        }
+      });
+    },
+    async handleSubmit() {
+      if (!this.isNicknameValid || this.isLoading) {
+        return;
+      }
 
-  handleSubmit(): void {
-    if (!this.isNicknameValid) {
-      return;
-    }
+      const trimmedNickname = this.nickname.trim();
+      
+      try {
+        this.isLoading = true;
+        
+        // Call server API for login with nickname
+        const userResponse = await apiService.loginWithNickname(trimmedNickname);
+        
+        // Emit event to parent component with server response
+        this.$emit('nickname-submitted', {
+          nickname: userResponse.nickname,
+          userId: userResponse.id
+        });
 
-    const trimmedNickname = this.nickname.trim();
-    
-    // Emit event to parent component
-    this.$emit('nickname-submitted', {
-      nickname: trimmedNickname,
-      userId: this.generateUserId(trimmedNickname)
-    });
-
-    this.hide();
-  }
-
-  private generateUserId(nickname: string): string {
-    const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substr(2, 6);
-    return `user_${timestamp}_${randomSuffix}`;
-  }
-}
+        this.hide();
+        
+      } catch (error) {
+        console.error('Login failed:', error);
+        this.$toasted.error('로그인에 실패했습니다. 다시 시도해주세요.');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+  },
+};
 </script>
 
 <style scoped>

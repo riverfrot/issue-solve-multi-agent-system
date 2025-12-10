@@ -55,7 +55,7 @@
         />
         
         <!-- Quick Actions -->
-        <div class="quick-actions mt-3 d-flex flex-wrap justify-content-center">
+        <div class="quick-actions mt-2 d-flex flex-wrap justify-content-center">
           <b-button
             v-for="action in quickActions"
             :key="action.label"
@@ -71,25 +71,18 @@
       </b-col>
     </b-row>
 
-    <!-- User Nickname Modal -->
-    <user-nickname-modal 
-      ref="nicknameModal"
-      @nickname-submitted="handleNicknameSubmitted"
-    />
   </b-container>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions, mapGetters } from 'vuex';
 import ChatInput from '@/components/ChatInput.vue';
-import UserNicknameModal from '@/components/UserNicknameModal.vue';
 import apiService from '@/services/ApiService';
 
 export default {
   name: 'ChatRoom',
   components: {
     ChatInput,
-    UserNicknameModal,
   },
   props: {
     sessionId: {
@@ -123,7 +116,8 @@ export default {
     };
   },
   computed: {
-    ...mapState(['messages', 'isLoading', 'currentAgent', 'user', 'isUserLoggedIn']),
+    ...mapState(['messages', 'isLoading', 'currentAgent', 'user']),
+    ...mapGetters(['isUserLoggedIn']),
     storeSessionId() {
       return this.$store.state.sessionId;
     },
@@ -132,14 +126,6 @@ export default {
     },
   },
   watch: {
-    isUserLoggedIn(newValue) {
-      // If user logs out, show nickname modal
-      if (!newValue) {
-        this.$nextTick(() => {
-          this.$refs.nicknameModal?.show();
-        });
-      }
-    },
     messages: {
       handler() {
         this.scrollToBottom();
@@ -149,9 +135,26 @@ export default {
     isLoading() {
       this.scrollToBottom();
     },
+    // 세션 ID 변경 시 자동으로 채팅 클리어 후 히스토리 로드
+    sessionId: {
+      handler(newSessionId, oldSessionId) {
+        if (newSessionId && newSessionId !== oldSessionId) {
+          this.handleSessionChange(newSessionId);
+        }
+      },
+      immediate: false, // mounted에서 처리하므로 immediate 불필요
+    },
+    currentSessionId: {
+      handler(newSessionId, oldSessionId) {
+        if (newSessionId && newSessionId !== oldSessionId) {
+          this.handleSessionChange(newSessionId);
+        }
+      },
+      immediate: false,
+    },
   },
   methods: {
-    ...mapActions(['addUserMessage', 'addAssistantMessage', 'addErrorMessage']),
+    ...mapActions(['addUserMessage', 'addAssistantMessage', 'addErrorMessage', 'loadChatHistory', 'clearChat']),
     async handleSendMessage(message) {
       if (this.isLoading) return;
 
@@ -297,35 +300,6 @@ export default {
     getCurrentUserId() {
       return this.user?.id || 'user_default';
     },
-    async handleNicknameSubmitted(userInfo) {
-      try {
-        // Register/login user on server
-        const serverUser = await apiService.loginWithNickname(userInfo.nickname);
-        
-        // Store user information in Vuex with server-generated ID
-        const user = {
-          id: serverUser.id,
-          nickname: serverUser.nickname,
-          createdAt: new Date(serverUser.createdAt),
-        };
-        
-        this.$store.commit('updateUser', user);
-        
-        // Show welcome message with nickname
-        this.addWelcomeMessage(userInfo.nickname);
-      } catch (error) {
-        console.error('Failed to register user:', error);
-        // Fallback: use client-generated ID if server fails
-        const user = {
-          id: userInfo.userId,
-          nickname: userInfo.nickname,
-          createdAt: new Date(),
-        };
-        
-        this.$store.commit('updateUser', user);
-        this.addWelcomeMessage(userInfo.nickname);
-      }
-    },
     addWelcomeMessage(nickname) {
       const welcomeMessage = {
         id: Date.now(),
@@ -337,6 +311,58 @@ export default {
       };
       this.$store.commit('addMessage', welcomeMessage);
     },
+    async loadChatHistoryFromServer() {
+      if (this.isLoading) return;
+      
+      try {
+        this.$store.commit('updateIsLoading', true);
+        await this.loadChatHistory(this.currentSessionId);
+        this.$store.commit('updateAgentStatus', '✅ 채팅 히스토리 로드 완료');
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        this.$store.commit('updateAgentStatus', '❌ 히스토리 로드 실패');
+        this.addErrorMessage(error);
+      } finally {
+        this.$store.commit('updateIsLoading', false);
+      }
+    },
+    clearChatHistory() {
+      if (this.isLoading) return;
+      
+      this.clearChat();
+      this.$store.commit('updateAgentStatus', '🗑️ 채팅 기록이 클리어되었습니다');
+      
+      // 웰컴 메시지 다시 추가
+      if (this.isUserLoggedIn) {
+        this.addWelcomeMessage(this.user.nickname);
+      }
+    },
+    async handleSessionChange(newSessionId) {
+      if (!this.isUserLoggedIn || this.isLoading) return;
+      
+      try {
+        // 1단계: 채팅 클리어
+        this.clearChat();
+        
+        // 2단계: 세션 ID 업데이트
+        this.$store.commit('updateSessionId', newSessionId);
+        
+        // 3단계: 히스토리 로드 시도
+        const history = await this.loadChatHistory(newSessionId);
+        
+        // 4단계: 히스토리가 없으면 웰컴 메시지 추가
+        if (!history || history.length === 0) {
+          this.addWelcomeMessage(this.user.nickname);
+        }
+        
+        this.$store.commit('updateAgentStatus', `📝 ${newSessionId.substring(0, 8)}... 채팅방으로 이동완료`);
+        
+      } catch (error) {
+        // 히스토리 로드 실패시 웰컴 메시지 표시
+        this.addWelcomeMessage(this.user.nickname);
+        this.$store.commit('updateAgentStatus', '✨ 새로운 채팅방입니다');
+      }
+    },
   },
   async mounted() {
     // Initialize session or use existing
@@ -344,14 +370,14 @@ export default {
       this.$store.commit('updateSessionId', this.sessionId);
     }
 
-    // Show nickname modal if user is not logged in
-    if (!this.isUserLoggedIn) {
-      this.$nextTick(() => {
-        this.$refs.nicknameModal.show();
-      });
-    } else if (this.messages.length === 0) {
-      // Add welcome message if user is logged in but no messages exist
-      this.addWelcomeMessage(this.user.nickname);
+    // Use the same logic as session change for initial load
+    if (this.isUserLoggedIn) {
+      await this.handleSessionChange(this.currentSessionId);
+    } else {
+      // If user is not logged in, add welcome message for anonymous usage
+      if (this.messages.length === 0) {
+        this.addWelcomeMessage('Guest');
+      }
     }
   },
 };
@@ -417,6 +443,17 @@ export default {
 .loading-indicator {
   color: #6c757d;
   font-size: 0.9rem;
+}
+
+.chat-controls {
+  padding: 0.25rem 0;
+  border-top: 1px solid #e9ecef;
+  margin-top: 0.5rem;
+  
+  .btn {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
 }
 
 .quick-actions {
