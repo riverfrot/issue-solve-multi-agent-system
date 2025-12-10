@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import Router, { RouteConfig } from 'vue-router';
 import ChatRoom from '@/views/ChatRoom.vue';
+import ChatRoomList from '@/views/ChatRoomList.vue';
 
 Vue.use(Router);
 
@@ -8,7 +9,12 @@ const routes: RouteConfig[] = [
   {
     path: '/',
     name: 'Home',
-    component: ChatRoom,
+    component: ChatRoomList,
+  },
+  {
+    path: '/chatrooms',
+    name: 'ChatRooms',
+    component: ChatRoomList,
   },
   {
     path: '/chat',
@@ -25,7 +31,7 @@ const routes: RouteConfig[] = [
 
 const router = new Router({
   mode: 'history',
-  base: import.meta.env.BASE_URL || '/',
+  base: '/',
   routes,
 });
 

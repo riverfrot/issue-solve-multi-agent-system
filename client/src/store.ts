@@ -132,8 +132,8 @@ const store: StoreOptions<AppState> = {
       commit('updateSessionId', null);
       // Reset loading state
       commit('updateIsLoading', false);
-      // Reset agent status
-      commit('updateAgentStatus', '4개 전문 에이전트 대기 중');
+      // Reset connection status
+      commit('updateConnectionStatus', 'disconnected');
     },
   },
 };

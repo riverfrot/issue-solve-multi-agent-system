@@ -2,10 +2,17 @@
   <b-navbar class="chat-header" variant="dark">
     <b-navbar-brand>
       <div class="d-flex align-items-center">
-        <span class="mr-2">🤖</span>
         <div>
-          <h5 class="mb-0">Multi-Agent Chatbot</h5>
-          <small class="text-muted">{{ agentStatus }}</small>
+          <h5 class="mb-0 text-white">Issue-solve chatbot</h5>
+          <small class="text-muted">
+            <a 
+              href="https://github.com/riverfrot/issue-solve-multi-agent-system" 
+              target="_blank" 
+              class="github-link"
+            >
+              GitHub Repository
+            </a>
+          </small>
         </div>
       </div>
     </b-navbar-brand>
@@ -14,7 +21,7 @@
       <!-- User Info -->
       <b-nav-item v-if="user" class="d-flex align-items-center mr-3">
         <span class="text-light mr-2">
-          👤 {{ user.nickname }}
+          {{ user.nickname }}
         </span>
         <b-button
           @click="handleLogout"
@@ -26,18 +33,6 @@
         </b-button>
       </b-nav-item>
       
-      <!-- Connection Status -->
-      <b-nav-item class="d-flex align-items-center">
-        <div 
-          class="status-indicator mr-2"
-          :class="{
-            'status-connected': connectionStatus === 'connected',
-            'status-connecting': connectionStatus === 'connecting',
-            'status-disconnected': connectionStatus === 'disconnected'
-          }"
-        />
-        <span class="text-capitalize">{{ connectionStatus }}</span>
-      </b-nav-item>
     </b-navbar-nav>
   </b-navbar>
 </template>
@@ -51,7 +46,7 @@ export default class ChatHeader extends Vue {
   @Prop({ type: String, default: 'disconnected' })
   connectionStatus!: string;
 
-  @Prop({ type: String, default: '4개 전문 에이전트 대기 중' })
+  @Prop({ type: String, default: '' })
   agentStatus!: string;
 
   @Prop({ type: Object, default: null })
@@ -84,22 +79,15 @@ export default class ChatHeader extends Vue {
 <style lang="scss" scoped>
 .chat-header {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  
-  .status-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+
+  .github-link {
+    color: #8fc7ff;
+    text-decoration: none;
+    transition: color 0.2s ease;
     
-    &.status-connected {
-      background-color: #28a745;
-    }
-    
-    &.status-connecting {
-      background-color: #ffc107;
-    }
-    
-    &.status-disconnected {
-      background-color: #dc3545;
+    &:hover {
+      color: #ffffff;
+      text-decoration: underline;
     }
   }
 
