@@ -164,7 +164,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 import ChatRoom from '@/views/ChatRoom.vue';
 import UserNicknameModal from '@/components/UserNicknameModal.vue';
 import apiService from '@/services/ApiService';
@@ -186,7 +186,8 @@ export default {
     };
   },
   computed: {
-    ...mapState(['user', 'isUserLoggedIn']),
+    ...mapState(['user']),
+    ...mapGetters(['isUserLoggedIn']),
   },
   async mounted() {
     if (this.isUserLoggedIn) {
@@ -339,7 +340,7 @@ export default {
       this.$refs.nicknameModal.show();
     },
 
-    handleNicknameSubmitted(userData) {
+    async handleNicknameSubmitted(userData) {
       // Store user data in Vuex store
       this.$store.commit('updateUser', {
         id: userData.userId,
@@ -347,6 +348,17 @@ export default {
       });
       
       this.$toasted.success(`환영합니다, ${userData.nickname}님!`);
+      
+      // Auto-create and select a chat room after login
+      await this.loadChatRooms();
+      
+      // If no chat rooms exist, create one automatically
+      if (this.chatRooms.length === 0) {
+        await this.createNewChatRoom();
+      } else {
+        // Select the most recent chat room
+        this.selectedChatRoomId = this.chatRooms[0].id;
+      }
     },
   },
 };

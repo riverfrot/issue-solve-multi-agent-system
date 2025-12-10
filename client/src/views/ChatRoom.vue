@@ -71,25 +71,18 @@
       </b-col>
     </b-row>
 
-    <!-- User Nickname Modal -->
-    <user-nickname-modal 
-      ref="nicknameModal"
-      @nickname-submitted="handleNicknameSubmitted"
-    />
   </b-container>
 </template>
 
 <script>
 import { mapState, mapActions } from 'vuex';
 import ChatInput from '@/components/ChatInput.vue';
-import UserNicknameModal from '@/components/UserNicknameModal.vue';
 import apiService from '@/services/ApiService';
 
 export default {
   name: 'ChatRoom',
   components: {
     ChatInput,
-    UserNicknameModal,
   },
   props: {
     sessionId: {
@@ -132,14 +125,6 @@ export default {
     },
   },
   watch: {
-    isUserLoggedIn(newValue) {
-      // If user logs out, show nickname modal
-      if (!newValue) {
-        this.$nextTick(() => {
-          this.$refs.nicknameModal?.show();
-        });
-      }
-    },
     messages: {
       handler() {
         this.scrollToBottom();
@@ -297,35 +282,6 @@ export default {
     getCurrentUserId() {
       return this.user?.id || 'user_default';
     },
-    async handleNicknameSubmitted(userInfo) {
-      try {
-        // Register/login user on server
-        const serverUser = await apiService.loginWithNickname(userInfo.nickname);
-        
-        // Store user information in Vuex with server-generated ID
-        const user = {
-          id: serverUser.id,
-          nickname: serverUser.nickname,
-          createdAt: new Date(serverUser.createdAt),
-        };
-        
-        this.$store.commit('updateUser', user);
-        
-        // Show welcome message with nickname
-        this.addWelcomeMessage(userInfo.nickname);
-      } catch (error) {
-        console.error('Failed to register user:', error);
-        // Fallback: use client-generated ID if server fails
-        const user = {
-          id: userInfo.userId,
-          nickname: userInfo.nickname,
-          createdAt: new Date(),
-        };
-        
-        this.$store.commit('updateUser', user);
-        this.addWelcomeMessage(userInfo.nickname);
-      }
-    },
     addWelcomeMessage(nickname) {
       const welcomeMessage = {
         id: Date.now(),
@@ -344,13 +300,8 @@ export default {
       this.$store.commit('updateSessionId', this.sessionId);
     }
 
-    // Show nickname modal if user is not logged in
-    if (!this.isUserLoggedIn) {
-      this.$nextTick(() => {
-        this.$refs.nicknameModal.show();
-      });
-    } else if (this.messages.length === 0) {
-      // Add welcome message if user is logged in but no messages exist
+    // Add welcome message if user is logged in and no messages exist
+    if (this.isUserLoggedIn && this.messages.length === 0) {
       this.addWelcomeMessage(this.user.nickname);
     }
   },
