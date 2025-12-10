@@ -241,7 +241,7 @@ class ApiService {
     }
   }
 
-  // Streaming chat message using Server-Sent Events
+  // Streaming chat message using fetch + ReadableStream (UTF-8 호환)
   async sendStreamingMessage(
     message: string, 
     sessionId: string,
@@ -250,8 +250,6 @@ class ApiService {
     onComplete: () => void,
     onError: (error: Error) => void
   ): Promise<void> {
-    let eventSource: EventSource | null = null;
-    
     try {
       // URL parameters를 더 안전하게 구성
       const params = new URLSearchParams({
@@ -261,55 +259,78 @@ class ApiService {
       });
       const url = `${API_URL}/chatbot/chat/stream?${params.toString()}`;
       
-      eventSource = new EventSource(url);
-      
-      eventSource.onmessage = (event) => {
-        try {
-          // 기본 메시지 이벤트 처리
-          const data = event.data.trim();
-          if (data === '[DONE]') {
-            eventSource?.close();
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
+      const decoder = new TextDecoder('utf-8'); // UTF-8 명시적 디코딩
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
             onComplete();
-            return;
+            break;
           }
-          
-          const streamingResponse = JSON.parse(data);
-          
-          if (streamingResponse.chunk) {
-            onChunk(streamingResponse.chunk);
-          }
-          
-          if (streamingResponse.isLast || streamingResponse.done) {
-            eventSource?.close();
-            onComplete();
-          }
-        } catch (parseError) {
-          console.warn('Failed to parse streaming data:', parseError);
-          // JSON 파싱 실패시 raw text로 처리
-          const data = event.data.trim();
-          if (data && data !== '[DONE]') {
-            onChunk(data);
+
+          // UTF-8 디코딩
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+
+          // SSE 이벤트 파싱
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // 마지막 불완전한 라인은 버퍼에 보관
+
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              const data = line.slice(5).trim();
+              
+              if (data === '[DONE]') {
+                onComplete();
+                return;
+              }
+
+              try {
+                const streamingResponse = JSON.parse(data);
+                
+                if (streamingResponse.chunk) {
+                  onChunk(streamingResponse.chunk);
+                }
+                
+                if (streamingResponse.isLast || streamingResponse.done) {
+                  onComplete();
+                  return;
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse streaming data:', parseError);
+                // JSON 파싱 실패시 raw text로 처리
+                if (data && data !== '[DONE]') {
+                  onChunk(data);
+                }
+              }
+            }
           }
         }
-      };
-      
-      eventSource.onerror = (event) => {
-        console.error('EventSource error:', event);
-        if (eventSource) {
-          eventSource.close();
-          eventSource = null;
-        }
-        onError(new Error('스트리밍 연결 에러가 발생했습니다.'));
-      };
-      
-      eventSource.onopen = () => {
-        console.log('EventSource connection opened');
-      };
+      } finally {
+        reader.releaseLock();
+      }
       
     } catch (error: any) {
-      if (eventSource) {
-        eventSource.close();
-      }
       onError(new Error(`스트리밍 요청 실패: ${error.message}`));
     }
   }

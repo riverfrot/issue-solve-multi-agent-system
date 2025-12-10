@@ -24,7 +24,7 @@ public class ChatbotController {
         return ResponseEntity.ok(response);
     }
     
-    @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/chat/stream", produces = "text/event-stream;charset=UTF-8")
     public SseEmitter chatStream(@RequestParam(required = true) String message, 
                                 @RequestParam(required = true) String sessionId,
                                 @RequestParam(required = true) String userId) {

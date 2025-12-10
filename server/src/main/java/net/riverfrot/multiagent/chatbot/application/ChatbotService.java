@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -121,7 +122,20 @@ public class ChatbotService {
     }
     
     private List<String> splitTextForTypingEffect(String text) {
-        return List.of(text.split(" "));
+        String[] words = text.split(" ");
+        List<String> chunks = new ArrayList<>();
+        
+        for (int i = 0; i < words.length; i++) {
+            if (i == words.length - 1) {
+                // 마지막 단어는 띄어쓰기 없이
+                chunks.add(words[i]);
+            } else {
+                // 중간 단어들은 뒤에 띄어쓰기 추가
+                chunks.add(words[i] + " ");
+            }
+        }
+        
+        return chunks;
     }
     
     @Transactional
