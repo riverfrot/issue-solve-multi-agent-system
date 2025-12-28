@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka
+    container_name: multiagent-kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+      - "9101:9101"
+    environment:
+      # KRaft 모드 설정
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      
+      # 리스너 설정
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:9093'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      
+      # 클러스터 ID (UUID 형식, 고유값으로 변경 가능)
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      
+      # 복제 설정
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      
+      # JMX 모니터링
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      
+      # 토픽 자동 생성 허용
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      
+      # 로그 보존 정책 (개발용)
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_RETENTION_BYTES: 1073741824  # 1GB
+      
+      # KRaft 로그 디렉토리
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: multiagent-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: multiagent
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      # Zookeeper 설정 제거됨 (KRaft 모드에서는 불필요)
+
+  # Kafka 토픽 초기화 서비스
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # Kafka가 준비될 때까지 대기
+      echo 'Waiting for Kafka to be ready...'
+      sleep 5
+      
+      echo 'Listing existing topics...'
+      kafka-topics --bootstrap-server kafka:29092 --list
+
+      echo 'Creating topics...'
+      
+      # 챗봇 요청 토픽
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists \
+        --topic chat-request \
+        --replication-factor 1 \
+        --partitions 3 \
+        --config retention.ms=86400000
+      
+      # 챗봇 응답 토픽  
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists \
+        --topic chat-response \
+        --replication-factor 1 \
+        --partitions 3 \
+        --config retention.ms=86400000
+      
+      # 시스템 모니터링 토픽 (선택사항)
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists \
+        --topic system-events \
+        --replication-factor 1 \
+        --partitions 1 \
+        --config retention.ms=86400000
+      
+      echo 'Topics created successfully!'
+      kafka-topics --bootstrap-server kafka:29092 --list
+      kafka-topics --bootstrap-server kafka:29092 --describe
+      "
+
+volumes:
+  kafka-data:
+    driver: local
