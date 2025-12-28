@@ -18,8 +18,30 @@ spring:
     init:
       mode: never  # 테스트에서는 data.sql 로드하지 않음
       
+  # Kafka 테스트 설정
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: test-multiagent-server
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+
+# 테스트용 Kafka 토픽 설정      
+multiagent:
+  kafka:
+    topics:
+      chat-request: chat-request
+      chat-response: chat-response  
+      system-events: system-events
+      
 logging:
   level:
-    net.riverfrot.multiagent: WARN
+    net.riverfrot.multiagent: DEBUG
     org.hibernate.SQL: WARN
+    org.apache.kafka: INFO
+    org.springframework.kafka: DEBUG
     root: WARN
