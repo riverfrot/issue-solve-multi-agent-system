@@ -65,6 +65,7 @@ spring:
   config:
     activate:
       on-profile: dev
+    import: application-kafka.yml
   jpa:
     hibernate:
       ddl-auto: create-drop

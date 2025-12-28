@@ -1,0 +1,45 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    
+    # Producer 설정
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger-ms: 1
+      buffer-memory: 33554432
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        
+    # Consumer 설정
+    consumer:
+      group-id: multiagent-server
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: latest
+      enable-auto-commit: false
+      max-poll-records: 500
+      properties:
+        isolation.level: read_committed
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
+        
+    # Listener 설정
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 3
+      poll-timeout: 3000
+      
+# 토픽 설정
+multiagent:
+  kafka:
+    topics:
+      chat-request: chat-request
+      chat-response: chat-response  
+      system-events: system-events
+    partitions: 3
+    replication-factor: 1
