@@ -8,3 +8,7 @@ aiohttp>=3.9.0
 python-multipart>=0.0.20
 python-dotenv>=1.2.0
 anyio>=4.11.0
+
+# Kafka Dependencies
+kafka-python>=2.0.2
+confluent-kafka>=2.5.0
