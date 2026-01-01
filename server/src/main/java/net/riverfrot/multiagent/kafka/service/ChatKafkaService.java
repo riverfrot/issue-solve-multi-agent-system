@@ -61,6 +61,39 @@ public class ChatKafkaService {
     }
     
     /**
+     * Multiagent 채팅 요청 전송 및 응답 대기 (Virtual Thread)
+     */
+    public ChatKafkaResponse sendChatWithMultiagent(String sessionId, String userId, String message, String agentType, boolean useMultiagent) {
+        String correlationId = null;
+        try {
+            log.info("Starting multiagent chat request flow - session: {}, user: {}, agentType: {}, useMultiagent: {}", 
+                    sessionId, userId, agentType, useMultiagent);
+            
+            correlationId = producerService.sendChatRequestWithMultiagent(sessionId, userId, message, agentType, useMultiagent);
+            
+            log.info("Multiagent chat request sent successfully - correlationId: {}", correlationId);
+            
+            ChatKafkaResponse response = consumerService.waitForResponse(correlationId)
+                    .get(30, TimeUnit.SECONDS); // 30초 타임아웃
+            
+            log.info("Multiagent chat response received successfully - correlationId: {}, agentType: {}, isFinal: {}", 
+                    response.correlationId(), response.agentType(), response.isFinal());
+            
+            return response;
+            
+        } catch (TimeoutException e) {
+            log.warn("Timeout waiting for multiagent response. correlationId: {}", correlationId);
+            if (correlationId != null) {
+                consumerService.cancelWaitForResponse(correlationId);
+            }
+            throw new RuntimeException("Multiagent chat request timeout - no response from AI agent", e);
+        } catch (Exception e) {
+            log.error("Error in multiagent chat request flow: {}", e.getMessage(), e);
+            throw new RuntimeException("Multiagent chat service error: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
      * 서비스 상태 정보 조회
      */
     public java.util.Map<String, Object> getServiceStatus() {

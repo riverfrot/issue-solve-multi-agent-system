@@ -62,6 +62,32 @@ public class ChatKafkaProducerService {
     }
     
     /**
+     * Multiagent 채팅 요청을 Kafka로 전송 (Virtual Thread 친화적 - 동기 방식)
+     * 에이전트 타입 및 멀티에이전트 사용 여부 지원
+     * @return correlation ID for tracking response
+     */
+    public String sendChatRequestWithMultiagent(String sessionId, String userId, String message, String agentType, boolean useMultiagent) {
+        String correlationId = generateCorrelationId();
+        
+        try {
+            ChatKafkaRequest request = ChatKafkaRequest.createWithMultiagent(
+                correlationId, sessionId, userId, message, agentType, useMultiagent);
+            String jsonPayload = objectMapper.writeValueAsString(request);
+            
+            // Virtual Thread에서는 여기서 블로킹(.get)해도 비용이 거의 0에 가깝습니다.
+            kafkaTemplate.send(chatRequestTopic, sessionId, jsonPayload)
+                    .get(5, TimeUnit.SECONDS); // Kafka 전송 자체는 빠르므로 5초면 충분
+            
+            return correlationId;
+            
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize multiagent chat request", e);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException("Failed to send multiagent chat request to Kafka", e);
+        }
+    }
+    
+    /**
      * 고유한 correlation ID 생성
      * 형식: sessionId-timestamp-uuid
      */

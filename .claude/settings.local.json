@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PYTHONPATH=/Users/jeongdonghun/git-hub/issue-solve-multi-agent-system/ai-agent/src python src/kafka_test_app.py)",
+      "Bash(SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

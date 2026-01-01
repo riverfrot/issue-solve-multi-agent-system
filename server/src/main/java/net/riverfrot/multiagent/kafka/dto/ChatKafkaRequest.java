@@ -37,7 +37,18 @@ public record ChatKafkaRequest(
                 userId,
                 message,
                 LocalDateTime.now(),
-                new ChatRequestMetadata("streaming", 30000L)
+                new ChatRequestMetadata("streaming", 30000L, "GENERAL", false)
+        );
+    }
+    
+    public static ChatKafkaRequest createWithMultiagent(String correlationId, String sessionId, String userId, String message, String agentType, boolean useMultiagent) {
+        return new ChatKafkaRequest(
+                correlationId,
+                sessionId, 
+                userId,
+                message,
+                LocalDateTime.now(),
+                new ChatRequestMetadata("streaming", 30000L, agentType, useMultiagent)
         );
     }
     
@@ -46,6 +57,12 @@ public record ChatKafkaRequest(
             String responseType, // "streaming" | "batch"
             
             @JsonProperty("timeout_ms") 
-            Long timeoutMs
+            Long timeoutMs,
+            
+            @JsonProperty("agent_type")
+            String agentType, // "GENERAL" | "CODE" | "RAG" | "SEARCH" | "SUPERVISOR"
+            
+            @JsonProperty("use_multiagent")
+            boolean useMultiagent
     ) {}
 }
