@@ -52,6 +52,33 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.transaction: DEBUG
     
+# OpenTelemetry 설정
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # 모든 트레이스 수집 (개발환경)
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces  # OTEL Collector HTTP 엔드포인트
+    metrics:
+      endpoint: http://localhost:4318/v1/metrics
+      
+otel:
+  exporter:
+    otlp:
+      endpoint: http://localhost:4318
+      protocol: http/protobuf
+  service:
+    name: chatbot-multiagent-system
+    version: 0.0.1-SNAPSHOT
+  instrumentation:
+    kafka:
+      enabled: true
+    spring-webmvc:
+      enabled: true
+    logback:
+      enabled: true
+    
 # 서버 설정
 server:
   port: 8000  # Vue.js가 8080 사용중이므로 8081로 변경

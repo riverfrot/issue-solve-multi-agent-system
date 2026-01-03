@@ -7,8 +7,12 @@ import logging
 from typing import Callable, Optional
 from kafka import KafkaConsumer
 from kafka.errors import KafkaError
+from opentelemetry import trace
+from opentelemetry.propagators.textmap import TextMapPropagator
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from .models import ChatKafkaRequest, ChatKafkaResponse
 from .producer import ChatKafkaProducer
+from ..config.otel_config import get_tracer
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,10 @@ class ChatKafkaConsumer:
         self.producer: Optional[ChatKafkaProducer] = None
         self.message_handler: Optional[Callable[[ChatKafkaRequest], str]] = None
         self.running = False
+        
+        # OpenTelemetry components
+        self.tracer = get_tracer(__name__)
+        self.propagator = TraceContextTextMapPropagator()
         
     def set_message_handler(self, handler: Callable[[ChatKafkaRequest], str]):
         """메시지 처리 핸들러 설정"""
@@ -95,52 +103,87 @@ class ChatKafkaConsumer:
     
     async def _process_message(self, message):
         """개별 메시지 처리"""
-        try:
-            logger.info(f"Received message: {message.value}")
+        # Extract trace context from Kafka message headers
+        parent_context = None
+        if message.headers:
+            # Convert Kafka headers to dict for propagation
+            headers_dict = {k.decode('utf-8'): v.decode('utf-8') 
+                          for k, v in message.headers if k and v}
             
-            # JSON 파싱
-            request_data = json.loads(message.value)
-            chat_request = ChatKafkaRequest(**request_data)
+            # Extract parent trace context
+            parent_context = self.propagator.extract(headers_dict)
             
-            logger.info(f"Processing chat request - Correlation ID: {chat_request.correlation_id}")
-            
-            # 메시지 처리
-            if self.message_handler:
-                response_message = await self._handle_message_async(chat_request)
-                
-                # 응답 전송
-                if self.producer:
-                    response = ChatKafkaResponse.success(
-                        correlation_id=chat_request.correlation_id,
-                        session_id=chat_request.session_id,
-                        message=response_message,
-                        agent_type="GENERAL"
-                    )
-                    await self.producer.send_response(response)
-                    logger.info(f"Response sent for correlation ID: {chat_request.correlation_id}")
-                else:
-                    logger.warning("No producer configured - response not sent")
-            else:
-                logger.warning("No message handler configured")
-                
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON message: {e}")
-            
-        except Exception as e:
-            logger.error(f"Failed to process message: {e}")
-            
-            # 에러 응답 전송 (가능한 경우)
+        # Start a new span with extracted parent context
+        with self.tracer.start_as_current_span(
+            "kafka.consumer.process_message",
+            context=parent_context,
+            attributes={
+                "messaging.system": "kafka",
+                "messaging.destination": message.topic,
+                "messaging.operation": "receive",
+                "messaging.kafka.partition": message.partition,
+                "messaging.kafka.offset": message.offset,
+            }
+        ) as span:
             try:
-                if hasattr(self, '_last_correlation_id') and self.producer:
-                    error_response = ChatKafkaResponse.error(
-                        correlation_id=getattr(self, '_last_correlation_id', 'unknown'),
-                        session_id=getattr(self, '_last_session_id', 'unknown'),
-                        error_message=str(e),
-                        error_code="PROCESSING_ERROR"
-                    )
-                    await self.producer.send_response(error_response)
-            except:
-                pass  # 에러 응답 전송 실패는 무시
+                logger.info(f"Received message: {message.value}")
+                
+                # JSON 파싱
+                request_data = json.loads(message.value)
+                chat_request = ChatKafkaRequest(**request_data)
+                
+                # Add correlation ID to span
+                span.set_attribute("messaging.correlation_id", chat_request.correlation_id)
+                span.set_attribute("chat.session_id", chat_request.session_id)
+                
+                logger.info(f"Processing chat request - Correlation ID: {chat_request.correlation_id}")
+            
+                # 메시지 처리
+                if self.message_handler:
+                    response_message = await self._handle_message_async(chat_request)
+                    
+                    # 응답 전송
+                    if self.producer:
+                        response = ChatKafkaResponse.success(
+                            correlation_id=chat_request.correlation_id,
+                            session_id=chat_request.session_id,
+                            message=response_message,
+                            agent_type="GENERAL"
+                        )
+                        await self.producer.send_response(response)
+                        logger.info(f"Response sent for correlation ID: {chat_request.correlation_id}")
+                        
+                        # Record successful processing
+                        span.set_attribute("chat.processing.status", "success")
+                    else:
+                        logger.warning("No producer configured - response not sent")
+                        span.set_attribute("chat.processing.status", "no_producer")
+                else:
+                    logger.warning("No message handler configured")
+                    span.set_attribute("chat.processing.status", "no_handler")
+                    
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON message: {e}")
+                span.record_exception(e)
+                span.set_attribute("chat.processing.status", "json_decode_error")
+                
+            except Exception as e:
+                logger.error(f"Failed to process message: {e}")
+                span.record_exception(e)
+                span.set_attribute("chat.processing.status", "error")
+                
+                # 에러 응답 전송 (가능한 경우)
+                try:
+                    if hasattr(self, '_last_correlation_id') and self.producer:
+                        error_response = ChatKafkaResponse.error(
+                            correlation_id=getattr(self, '_last_correlation_id', 'unknown'),
+                            session_id=getattr(self, '_last_session_id', 'unknown'),
+                            error_message=str(e),
+                            error_code="PROCESSING_ERROR"
+                        )
+                        await self.producer.send_response(error_response)
+                except:
+                    pass  # 에러 응답 전송 실패는 무시
     
     async def _handle_message_async(self, chat_request: ChatKafkaRequest) -> str:
         """비동기로 메시지 처리"""
