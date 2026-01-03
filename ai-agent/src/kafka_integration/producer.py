@@ -4,10 +4,13 @@ Kafka Producer for sending chat responses to Spring Boot
 import json
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
+from opentelemetry import trace
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from .models import ChatKafkaResponse
+from ..config.otel_config import get_tracer
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +26,10 @@ class ChatKafkaProducer:
         self.bootstrap_servers = bootstrap_servers
         self.response_topic = response_topic
         self.producer: Optional[KafkaProducer] = None
+        
+        # OpenTelemetry components
+        self.tracer = get_tracer(__name__)
+        self.propagator = TraceContextTextMapPropagator()
         
     async def start(self):
         """Producer 시작"""
@@ -50,45 +57,81 @@ class ChatKafkaProducer:
     
     async def send_response(self, response: ChatKafkaResponse) -> bool:
         """채팅 응답 전송"""
-        try:
-            if not self.producer:
-                raise RuntimeError("Producer not started")
+        # Start a new span for message sending
+        with self.tracer.start_as_current_span(
+            "kafka.producer.send_response",
+            attributes={
+                "messaging.system": "kafka",
+                "messaging.destination": self.response_topic,
+                "messaging.operation": "send",
+                "messaging.correlation_id": response.correlation_id,
+                "chat.session_id": response.session_id,
+                "chat.agent_type": response.agent_type,
+            }
+        ) as span:
+            try:
+                if not self.producer:
+                    raise RuntimeError("Producer not started")
+                
+                # Pydantic 모델을 dict로 변환
+                response_dict = response.model_dump()
+                
+                # correlation_id를 key로 사용 (파티셔닝을 위해)
+                key = response.correlation_id
+                
+                logger.info(f"Sending response - Correlation ID: {response.correlation_id}")
+                logger.debug(f"Response data: {response_dict}")
+                
+                # Inject trace context into headers
+                headers = self._create_headers_with_trace_context()
+                
+                # 비동기로 메시지 전송
+                future = self.producer.send(
+                    topic=self.response_topic,
+                    value=response_dict,
+                    key=key,
+                    headers=headers
+                )
+                
+                # 전송 완료까지 대기
+                record_metadata = await self._wait_for_send(future)
+                
+                # Add success attributes
+                span.set_attribute("messaging.kafka.partition", record_metadata.partition)
+                span.set_attribute("messaging.kafka.offset", record_metadata.offset)
+                span.set_attribute("chat.processing.status", "sent")
+                
+                logger.info(
+                    f"Response sent successfully - "
+                    f"Topic: {record_metadata.topic}, "
+                    f"Partition: {record_metadata.partition}, "
+                    f"Offset: {record_metadata.offset}"
+                )
+                
+                return True
             
-            # Pydantic 모델을 dict로 변환
-            response_dict = response.model_dump()
-            
-            # correlation_id를 key로 사용 (파티셔닝을 위해)
-            key = response.correlation_id
-            
-            logger.info(f"Sending response - Correlation ID: {response.correlation_id}")
-            logger.debug(f"Response data: {response_dict}")
-            
-            # 비동기로 메시지 전송
-            future = self.producer.send(
-                topic=self.response_topic,
-                value=response_dict,
-                key=key
-            )
-            
-            # 전송 완료까지 대기
-            record_metadata = await self._wait_for_send(future)
-            
-            logger.info(
-                f"Response sent successfully - "
-                f"Topic: {record_metadata.topic}, "
-                f"Partition: {record_metadata.partition}, "
-                f"Offset: {record_metadata.offset}"
-            )
-            
-            return True
-            
-        except KafkaError as e:
-            logger.error(f"Kafka error sending response: {e}")
-            return False
-            
-        except Exception as e:
-            logger.error(f"Unexpected error sending response: {e}")
-            return False
+            except KafkaError as e:
+                logger.error(f"Kafka error sending response: {e}")
+                span.record_exception(e)
+                span.set_attribute("chat.processing.status", "kafka_error")
+                return False
+                
+            except Exception as e:
+                logger.error(f"Unexpected error sending response: {e}")
+                span.record_exception(e)
+                span.set_attribute("chat.processing.status", "error")
+                return False
+    
+    def _create_headers_with_trace_context(self) -> list[tuple[str, bytes]]:
+        """Create Kafka headers with injected trace context."""
+        headers_dict: Dict[str, str] = {}
+        
+        # Inject current trace context into headers
+        self.propagator.inject(headers_dict)
+        
+        # Convert to Kafka headers format
+        return [(key.encode('utf-8'), value.encode('utf-8')) 
+                for key, value in headers_dict.items()]
     
     async def _wait_for_send(self, future):
         """비동기로 전송 완료 대기"""
