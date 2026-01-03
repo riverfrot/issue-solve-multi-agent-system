@@ -51,7 +51,7 @@ services:
       - "14268:14268"   # Jaeger HTTP receiver
       - "14250:14250"   # Jaeger gRPC receiver  
     environment:
-      COLLECTOR_OTLP_ENABLED: true
+      COLLECTOR_OTLP_ENABLED: "true"
       SPAN_STORAGE_TYPE: memory
     restart: unless-stopped
     profiles:
