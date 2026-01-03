@@ -1,0 +1,118 @@
+receivers:
+  # OTLP receiver for traces, metrics, and logs
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "http://localhost:*"
+            - "http://127.0.0.1:*"
+  
+  # Prometheus receiver for metrics scraping (optional)
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          static_configs:
+            - targets: ['0.0.0.0:8888']
+        - job_name: 'kafka-exporter'
+          static_configs:
+            - targets: ['kafka:9101']
+
+  # Host metrics receiver (system metrics)
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      filesystem:
+      network:
+
+processors:
+  # Batch processor for better performance
+  batch:
+    timeout: 1s
+    send_batch_max_size: 1024
+    send_batch_size: 512
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    limit_mib: 512
+
+  # Resource processor to add standard attributes
+  resource:
+    attributes:
+      - key: service.name
+        value: multiagent-system
+        action: insert
+      - key: service.version
+        value: 1.0.0
+        action: insert
+      - key: deployment.environment
+        value: development
+        action: insert
+
+exporters:
+  # Logging exporter for debugging
+  logging:
+    loglevel: info
+
+  # OTLP exporter for traces (to Tempo)
+  otlp/tempo:
+    endpoint: http://tempo:4317
+    tls:
+      insecure: true
+
+  # OTLP exporter for metrics (to Mimir)
+  otlp/mimir:
+    endpoint: http://mimir:4317
+    tls:
+      insecure: true
+
+  # Loki exporter for logs
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    tls:
+      insecure: true
+
+  # Prometheus remote write exporter
+  prometheusremotewrite:
+    endpoint: http://mimir:9009/api/v1/push
+    tls:
+      insecure: true
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [logging, otlp/tempo]
+    
+    metrics:
+      receivers: [otlp, prometheus, hostmetrics]
+      processors: [memory_limiter, resource, batch]
+      exporters: [logging, prometheusremotewrite]
+    
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [logging, loki]
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      address: 0.0.0.0:8888

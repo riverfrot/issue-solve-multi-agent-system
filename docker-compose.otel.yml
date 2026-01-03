@@ -26,7 +26,11 @@ services:
     volumes:
       # OTEL Collector configuration (will be created)
       - ./otel/otel-collector-config.yaml:/otel-lgtm/otelcol-config.yaml
-      # Grafana data persistence (optional)
+      # Grafana provisioning - 자동 데이터소스 및 대시보드 설정
+      - ./otel/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./otel/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./otel/multiagent-dashboard.json:/var/lib/grafana/dashboards/multiagent-dashboard.json
+      # Grafana data persistence
       - otel-grafana-data:/var/lib/grafana
       # Tempo data persistence
       - tempo-data:/var/lib/tempo

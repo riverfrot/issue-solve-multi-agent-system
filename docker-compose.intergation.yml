@@ -130,8 +130,8 @@ services:
       - "4318:4318"     # OTLP HTTP receiver
       # Grafana UI
       - "3000:3000"     # Grafana web UI
-      # Additional monitoring ports
-      - "8888:8888"     # Prometheus metrics
+      # Additional receivers
+      - "8888:8888"     # Prometheus metrics (exposed by the collector)
       - "8889:8889"     # Prometheus remote write
       - "9090:9090"     # Prometheus server
       - "9411:9411"     # Zipkin receiver
@@ -140,19 +140,24 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       # OTEL Collector configuration
       OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4317
-      # Enable debug logging
+      # Enable debug logging (optional)
       GRAFANA_LOG_LEVEL: debug
     volumes:
-      # OTEL Collector configuration
+      # OTEL Collector configuration (will be created)
       - ./otel/otel-collector-config.yaml:/otel-lgtm/otelcol-config.yaml
-      # Data persistence
+      # Grafana provisioning - 자동 데이터소스 및 대시보드 설정
+      - ./otel/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./otel/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./otel/multiagent-dashboard.json:/var/lib/grafana/dashboards/multiagent-dashboard.json
+      # Grafana data persistence
       - otel-grafana-data:/var/lib/grafana
+      # Tempo data persistence
       - tempo-data:/var/lib/tempo
+      # Mimir data persistence
       - mimir-data:/var/lib/mimir
+      # Loki data persistence
       - loki-data:/var/lib/loki
     restart: unless-stopped
-    depends_on:
-      - kafka  # Kafka 메트릭 수집을 위해 의존성 추가
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
       interval: 30s
@@ -162,9 +167,7 @@ services:
     networks:
       - multiagent-network
 
-  # =====================================
-  # 추가 모니터링 (선택사항)
-  # =====================================
+  # OpenTelemetry Auto-instrumentation (선택사항 - 애플리케이션용)
   jaeger-all-in-one:
     image: jaegertracing/all-in-one:latest
     container_name: multiagent-jaeger
@@ -179,7 +182,7 @@ services:
     networks:
       - multiagent-network
     profiles:
-      - jaeger  # 옵셔널 서비스
+      - jaeger  # 옵셔널 서비스 (docker-compose --profile jaeger up)
 
 volumes:
   kafka-data:
