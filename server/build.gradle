@@ -36,6 +36,12 @@ dependencies {
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 	
+	// OpenTelemetry 의존성
+	implementation 'io.opentelemetry:opentelemetry-api'
+	implementation 'io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter'
+	implementation 'io.opentelemetry.instrumentation:opentelemetry-kafka'
+	implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-1.0'
+	
 	runtimeOnly 'com.h2database:h2'
 	
 	// 테스트 의존성

@@ -12,3 +12,13 @@ anyio>=4.11.0
 # Kafka Dependencies
 kafka-python>=2.0.2
 confluent-kafka>=2.5.0
+
+# OpenTelemetry Dependencies
+opentelemetry-api>=1.27.0
+opentelemetry-sdk>=1.27.0
+opentelemetry-instrumentation>=0.48b0
+opentelemetry-instrumentation-fastapi>=0.48b0
+opentelemetry-instrumentation-kafka-python>=0.48b0
+opentelemetry-instrumentation-logging>=0.48b0
+opentelemetry-exporter-otlp-proto-http>=1.27.0
+opentelemetry-semantic-conventions>=0.48b0

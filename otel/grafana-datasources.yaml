@@ -1,0 +1,38 @@
+apiVersion: 1
+
+datasources:
+  # Prometheus
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus       # <--- [중요] 대시보드 JSON의 "uid": "prometheus"와 일치해야 함
+    access: proxy
+    url: http://localhost:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 15s
+      httpMethod: GET
+
+  # Tempo
+  - name: Tempo
+    type: tempo
+    uid: tempo            # <--- 기왕이면 얘도 고정해주는 게 좋습니다.
+    access: proxy
+    url: http://localhost:3200
+    editable: true
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: 'prometheus' # <--- 위에서 설정한 uid: prometheus를 참조합니다.
+      nodeGraph:
+        enabled: true
+
+  # Loki
+  - name: Loki
+    type: loki
+    uid: loki             # <--- 얘도 고정 권장
+    access: proxy
+    url: http://localhost:3100
+    editable: true
+    jsonData:
+      maxLines: 1000

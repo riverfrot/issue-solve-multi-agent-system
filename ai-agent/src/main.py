@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from controller.health_controller import router as health_router
 from controller.chat_controller import router as chat_router
 from config.settings import settings
+from config.otel_config import otel_config
 from utils.logger import logger
 
 
@@ -17,6 +18,9 @@ def create_app() -> FastAPI:
         description=settings.app_description,
         debug=settings.debug,
     )
+    
+    # OpenTelemetry 설정 (FastAPI instrumentation 포함)
+    otel_config.configure_all(app)
 
     # CORS 설정
     app.add_middleware(
@@ -37,11 +41,12 @@ def create_app() -> FastAPI:
         logger.info(f"🚀 Starting {settings.app_name} v{settings.app_version}")
         logger.info(f"🌐 Server: http://{settings.host}:{settings.port}")
         logger.info(f"📚 API Docs: http://{settings.host}:{settings.port}/docs")
+        logger.info(f"📊 OpenTelemetry: {otel_config.otel_endpoint}")
 
         # 의존성 검증
         # validate_dependencies()  # 추후 구현 필요
 
-        logger.info("✅ Application started successfully")
+        logger.info("✅ Application started successfully with OpenTelemetry tracing")
 
     # 종료 이벤트
     @app.on_event("shutdown")
