@@ -3,27 +3,8 @@
 멀티 에이전트 기반의 이슈 해결 챗봇 시스템으로, 사용자의 문제를 AI 에이전트가 협력하여 해결하는 플랫폼입니다.
 
 ## 🏗️ 시스템 아키텍처
+<img width="1036" height="822" alt="image" src="https://github.com/user-attachments/assets/4942ca58-1419-458a-9927-9892773d00f6" />
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Vue.js Client │◄──►│ Spring Boot API │◄──►│  AI Agent (AI)  │
-│   (Frontend)    │    │   (Backend)     │    │   (Python)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │     Kafka       │
-                    │   (Message      │
-                    │   Streaming)    │
-                    └─────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │ Observability   │
-                    │ (OTEL + LGTM)   │
-                    │ Grafana/Tempo   │
-                    └─────────────────┘
-```
 
 ## 🚀 주요 기능
 
@@ -218,3 +199,4 @@ docker-compose -f docker-compose.intergation.yml up -d
 # 로그 확인
 docker-compose -f docker-compose.intergation.yml logs -f
 ```
+
